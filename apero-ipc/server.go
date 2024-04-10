@@ -11,7 +11,7 @@ const (
 	SocketPath = "/tmp/apero.sock"
 )
 
-func StartIPC(){
+func StartIPC() {
 	aperoCtl := new(AperoCtl)
 	rpc.Register(aperoCtl)
 
@@ -23,7 +23,6 @@ func StartIPC(){
 	}
 	go rpc.Accept(listener)
 }
-
 
 // func wait() {
 // 	signals := make(chan os.Signal, 1)

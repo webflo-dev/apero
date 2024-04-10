@@ -10,10 +10,10 @@ func NewClient() *rpc.Client {
 	if err != nil {
 		log.Fatalf("failed: %s", err)
 	}
-	return client;
+	return client
 }
 
-func SendQuit() (int,error) {
+func SendQuit() (int, error) {
 	client := NewClient()
 
 	defer client.Close()

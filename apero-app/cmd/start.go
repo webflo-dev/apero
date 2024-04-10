@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	ipc "apero-ipc"
 	"apero/app"
-	"apero/ipc"
 	"os"
 
 	"github.com/spf13/cobra"

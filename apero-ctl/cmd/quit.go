@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"apero/ipc"
+	ipc "apero-ipc"
 	"fmt"
 	"log"
 
