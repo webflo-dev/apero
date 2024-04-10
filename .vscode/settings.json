@@ -1,0 +1,12 @@
+{
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "go.alternateTools": {
+    "go": "/nix/store/khpb8wx5dvf3bshb0iz9dm23z83r6niv-go-1.21.7/bin/go",
+    "gofmt": "/nix/store/khpb8wx5dvf3bshb0iz9dm23z83r6niv-go-1.21.7/bin/gofmt",
+    "gopls": "/nix/store/2fxv4a01hmk4cs93jx35078xiqwzpay7-gopls-0.15.2/bin/gopls"
+  },
+  "go.lintOnSave": "file",
+  "go.formatTool": "gofmt"
+}
