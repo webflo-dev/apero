@@ -1,6 +1,6 @@
 package main
 
-import "apero-ctl/cmd"
+import "github.com/webflo-dev/apero-ctl/cmd"
 
 func main() {
 	cmd.Execute()

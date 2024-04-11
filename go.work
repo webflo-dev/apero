@@ -1,7 +1,7 @@
 go 1.21.7
 
 use (
-  ./apero-app
+  ./apero
   ./apero-ctl
-  ./apero-ipc
+  ./demo
 )

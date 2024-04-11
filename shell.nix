@@ -1,10 +1,9 @@
 {pkgs ? import <nixpkgs> {}}: let
   lib = pkgs.lib;
-
-  # minitime is a mini-output time wrapper.
-  minitime =
-    pkgs.writeShellScriptBin "minitime"
-    "command time --format $'%C -> %es\\n' \"$@\"";
+  # # minitime is a mini-output time wrapper.
+  # minitime =
+  #   pkgs.writeShellScriptBin "minitime"
+  #   "command time --format $'%C -> %es\\n' \"$@\"";
 in
   pkgs.mkShell {
     name = "apero-go";
@@ -20,9 +19,9 @@ in
       go
       gopls
       go-tools
-      # air
+      air
 
-      minitime
+      # minitime
     ];
 
     LD_PRELOAD = "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so";

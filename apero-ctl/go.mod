@@ -1,4 +1,4 @@
-module apero-ctl
+module github.com/webflo-dev/apero-ctl
 
 go 1.21.7
 
