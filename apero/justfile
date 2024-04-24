@@ -1,0 +1,5 @@
+build:
+	go build -o apero ./main.go
+
+run:
+	go run -v ./main.go

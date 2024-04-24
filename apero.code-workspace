@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "../ags"
+    },
+    {
+      "path": "../../github/ags"
+    }
+  ],
+  "settings": {}
+}

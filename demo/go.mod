@@ -1,6 +1,6 @@
 module demo
 
-go 1.21.7
+go 1.22
 
 require github.com/diamondburned/gotk4/pkg v0.2.2
 

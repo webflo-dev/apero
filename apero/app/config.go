@@ -2,30 +2,45 @@ package app
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
+
+	"webflo-dev/apero/logger"
 )
 
 type appConfiguration struct {
-	AppId   string `mapstructure:"app-id"`
-	CssFile string `mapstructure:"css-file"`
+	AppId      string
+	CssFile    string
+	IconFolder string
 }
 
 var appConfig appConfiguration
 
 func loadConfig(userConfig *UserConfig) {
 	workingDir, err := os.Getwd()
-	check(err, "Cannot get working directory")
+	if err != nil {
+		logger.AppLogger.Fatalf("Cannot get working directory. %w", err)
+	}
 
 	appConfig = appConfiguration{
-		AppId:   "apero.app",
-		CssFile: filepath.Join(workingDir, "apero.css"),
+		AppId:      "apero.app",
+		CssFile:    filepath.Join(workingDir, "apero.css"),
+		IconFolder: filepath.Join(workingDir, "icons"),
 	}
 
 	if userConfig != nil {
 		if userConfig.AppId != "" {
 			appConfig.AppId = userConfig.AppId
+		}
+
+		if userConfig.IconFolder != "" {
+			iconFolder := filepath.Dir(userConfig.IconFolder)
+			if iconFolder == "." {
+				iconFolder = filepath.Join(workingDir, userConfig.IconFolder)
+			} else {
+				iconFolder = os.ExpandEnv(userConfig.IconFolder)
+			}
+			appConfig.IconFolder = iconFolder
 		}
 
 		if userConfig.CssFile != "" {
@@ -39,8 +54,8 @@ func loadConfig(userConfig *UserConfig) {
 			if ok := checkUserCssFile(cssFile); ok {
 				appConfig.CssFile = cssFile
 			} else {
-				log.Println("user CSS file not found:", cssFile)
-				log.Println("default CSS file will be used:", cssFile)
+				logger.AppLogger.Println("user CSS file not found:", cssFile)
+				logger.AppLogger.Println("default CSS file will be used:", cssFile)
 				checkDefaultCssFile()
 			}
 		} else {
@@ -56,7 +71,7 @@ func checkUserCssFile(cssFile string) bool {
 
 func checkDefaultCssFile() {
 	if _, err := os.Stat(appConfig.CssFile); errors.Is(err, os.ErrNotExist) {
-		log.Println("default CSS file not found. CSS won't be applied", appConfig.CssFile)
+		logger.AppLogger.Println("default CSS file not found. CSS won't be applied", appConfig.CssFile)
 		appConfig.CssFile = ""
 	}
 }

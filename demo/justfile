@@ -1,0 +1,23 @@
+build:
+	go build -o demo ./main.go
+
+run args="":
+	go run -v ./main.go {{args}}
+
+build-css:
+	sassc --style expanded apero.scss apero.css
+
+watch:
+	#!/usr/bin/env bash
+
+	inotifywait --quiet --monitor --event create,modify,delete --recursive . | while read DIRECTORY EVENT FILE; do
+		file_extension=${FILE##*.}
+		case $file_extension in
+		scss)
+			echo "reload SCSS..."
+				sassc --style expanded apero.scss apero.css
+				# ../apero-ctl/aperoctl apply-css
+				go run -v ../apero-ctl/main.go apply-css
+			;;
+		esac
+	done

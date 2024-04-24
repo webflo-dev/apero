@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 
-	"webflo-dev/apero/ipc"
+	"webflo-dev/apero-ctl/ipc"
 
 	"github.com/spf13/cobra"
 )
@@ -22,9 +21,8 @@ func init() {
 }
 
 func sendQuit() {
-	reply, err := ipc.SendQuit()
+	_, err := ipc.NewClient().SendQuit()
 	if err != nil {
 		log.Fatal("error:", err)
 	}
-	fmt.Println("AperoCtl: ", reply)
 }

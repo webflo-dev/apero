@@ -9,17 +9,21 @@ in
     name = "apero-go";
 
     packages = with pkgs; [
-      gobject-introspection
-      gtk4
-      gtk4-layer-shell
-      atk
+      # gobject-introspection
+      # gtk4
+      # gtk4-layer-shell
+      librsvg
+      pkg-config
 
       ### Build tools
-      pkg-config
       go
       gopls
       go-tools
       air
+
+      just
+      inotify-tools
+      sassc
 
       # minitime
     ];

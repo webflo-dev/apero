@@ -1,10 +1,12 @@
 module webflo-dev/apero
 
-go 1.21.7
+go 1.22
+
 
 require (
 	github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc438
 	github.com/diamondburned/gotk4/pkg v0.2.2
+	github.com/godbus/dbus/v5 v5.1.0
 )
 
 require (

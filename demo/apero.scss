@@ -1,0 +1,131 @@
+$color_red: #cf3746;
+$color_orange: #df7c2c;
+$color_yellow: #ecbd10;
+$color_lime: #7cbd27;
+$color_green: #41a36f;
+$color_sky: #32b5c7;
+$color_blue: #277ab6;
+$color_purple: #ad4ed2;
+$color_white: #ffffff;
+
+$color_dark: #292a2b;
+$color_darker: #1d1d1d;
+$color_gray: #626861;
+$color_light: #d8e2e1;
+$color_light_gray: #aeb7b6;
+
+$bg_normal: #171a1f;
+$bg_normal_transparent: transparentize($bg_normal, 1-0.85);
+$fg_normal: $color_light;
+
+@mixin module(
+  $fg_icon: $color_yellow,
+  $fg: $color_light,
+  $bg: $bg_normal_transparent
+) {
+  padding: 6px 12px;
+  // border-radius: 12px;
+  border-radius: 8px;
+  border: 1px solid $color_gray;
+  background-color: $bg;
+
+  label {
+    color: $fg;
+  }
+
+  image {
+    font-size: 1.5rem;
+    color: $fg_icon;
+  }
+}
+
+@mixin font-monospace() {
+  font-family: "monospace";
+}
+
+label {
+  font-family: "system-ui";
+  font-size: 16px;
+  color: $color_light;
+}
+
+window {
+  background: transparent;
+}
+
+#bar {
+  button {
+    all: unset;
+  }
+
+  #date-time {
+    @include module;
+    // border: 1px solid red;
+
+    .date {
+      label {
+        color: $color_light_gray;
+      }
+    }
+    .time {
+      font-weight: bold;
+    }
+  }
+
+  #system-info {
+    @include module($color_lime);
+
+    .info {
+      & > label {
+        @include font-monospace;
+      }
+
+      &.warning {
+        color: $color_orange;
+        image {
+          color: $color_orange;
+        }
+      }
+
+      &.critical {
+        background-color: $color_red;
+        color: $color_light;
+        image {
+          color: $color_light;
+        }
+      }
+    }
+  }
+
+  #workspaces {
+    @include module($color_gray);
+
+    .workspace {
+      all: unset;
+
+      min-width: 24px;
+      min-height: 24px;
+      padding: 0px 3px;
+      // border: 1px solid red;
+
+      // all: unset;
+      // -gtk-icon-style: symbolic;
+
+      // padding: 0px 3px;
+      // transition: background-color 0.2s ease;
+
+      // background-color: $color_gray;
+      // label {
+      //   color: $bg_normal_transparent;
+      // }
+
+      // &.active {
+      //   background-color: $color_yellow;
+      // }
+
+      // &.occupied:not(.active) {
+      //   background-color: $color_sky;
+      // }
+    }
+  }
+}

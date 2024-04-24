@@ -1,6 +1,6 @@
-module github.com/webflo-dev/apero-ctl
+module webflo-dev/apero-ctl
 
-go 1.21.7
+go 1.22
 
 require github.com/spf13/cobra v1.8.0
 

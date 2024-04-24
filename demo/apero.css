@@ -1,3 +1,97 @@
-#bar {
-  border: 1px solid red;
+label {
+  font-family: "system-ui";
+  font-size: 16px;
+  color: #d8e2e1;
+}
+
+window {
+  background: transparent;
+}
+
+#bar button {
+  all: unset;
+}
+
+#bar #date-time {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #date-time label {
+  color: #d8e2e1;
+}
+
+#bar #date-time image {
+  font-size: 1.5rem;
+  color: #ecbd10;
+}
+
+#bar #date-time .date label {
+  color: #aeb7b6;
+}
+
+#bar #date-time .time {
+  font-weight: bold;
+}
+
+#bar #system-info {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #system-info label {
+  color: #d8e2e1;
+}
+
+#bar #system-info image {
+  font-size: 1.5rem;
+  color: #7cbd27;
+}
+
+#bar #system-info .info > label {
+  font-family: "monospace";
+}
+
+#bar #system-info .info.warning {
+  color: #df7c2c;
+}
+
+#bar #system-info .info.warning image {
+  color: #df7c2c;
+}
+
+#bar #system-info .info.critical {
+  background-color: #cf3746;
+  color: #d8e2e1;
+}
+
+#bar #system-info .info.critical image {
+  color: #d8e2e1;
+}
+
+#bar #workspaces {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #workspaces label {
+  color: #d8e2e1;
+}
+
+#bar #workspaces image {
+  font-size: 1.5rem;
+  color: #626861;
+}
+
+#bar #workspaces .workspace {
+  all: unset;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0px 3px;
 }

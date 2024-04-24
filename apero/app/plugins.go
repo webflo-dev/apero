@@ -6,6 +6,7 @@ import (
 	"log"
 	"path/filepath"
 	"plugin"
+	"webflo-dev/apero/logger"
 
 	"github.com/diamondburned/gotk4/pkg/gtk/v4"
 )
@@ -20,10 +21,14 @@ func loadPlugins(configDir string, plugins []string) {
 	for _, item := range plugins {
 
 		plugin, err := plugin.Open(filepath.Join(configDir, item))
-		check(err, "Cannot load plugins")
+		if err != nil {
+			logger.AppLogger.Fatalf("Cannot load plugins. %w", err)
+		}
 
 		appPlugins, err := lookUpSymbol[AppPlugin](plugin, "Windows")
-		check(err, "Cannot find Windows symbol")
+		if err != nil {
+			logger.AppLogger.Fatalf("Cannot find Windows symbol. %w", err)
+		}
 
 		(*appPlugins).Windows()
 	}
