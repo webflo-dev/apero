@@ -1,15 +1,9 @@
 package ui
 
 import (
-	"log"
-
-	"github.com/diamondburned/gotk4-layer-shell/pkg/gtk4layershell"
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/dlasky/gotk3-layershell/layershell"
+	"github.com/gotk3/gotk3/gtk"
 )
-
-// type GtkWindow struct {
-// 	*gtk.Window
-// }
 
 type Position int
 
@@ -20,11 +14,11 @@ const (
 	PositionBottom Position = 8
 )
 
-var Positions = map[Position]gtk4layershell.Edge{
-	PositionLeft:   gtk4layershell.LayerShellEdgeLeft,
-	PositionRight:  gtk4layershell.LayerShellEdgeRight,
-	PositionTop:    gtk4layershell.LayerShellEdgeTop,
-	PositionBottom: gtk4layershell.LayerShellEdgeBottom,
+var Positions = map[Position]layershell.LayerShellEdgeFlags{
+	PositionLeft:   layershell.LAYER_SHELL_EDGE_LEFT,
+	PositionRight:  layershell.LAYER_SHELL_EDGE_RIGHT,
+	PositionTop:    layershell.LAYER_SHELL_EDGE_TOP,
+	PositionBottom: layershell.LAYER_SHELL_EDGE_BOTTOM,
 }
 
 type Layer string
@@ -36,11 +30,11 @@ const (
 	LayerOverlay    Layer = "Overlay"
 )
 
-var Layers = map[Layer]gtk4layershell.Layer{
-	LayerTop:        gtk4layershell.LayerShellLayerTop,
-	LayerBottom:     gtk4layershell.LayerShellLayerBottom,
-	LayerBackground: gtk4layershell.LayerShellLayerBackground,
-	LayerOverlay:    gtk4layershell.LayerShellLayerOverlay,
+var Layers = map[Layer]layershell.LayerShellLayerFlags{
+	LayerTop:        layershell.LAYER_SHELL_LAYER_TOP,
+	LayerBottom:     layershell.LAYER_SHELL_LAYER_BOTTOM,
+	LayerBackground: layershell.LAYER_SHELL_LAYER_BACKGROUND,
+	LayerOverlay:    layershell.LAYER_SHELL_LAYER_OVERLAY,
 }
 
 type ExclusiveZone string
@@ -59,16 +53,16 @@ type WindowProps struct {
 }
 
 func NewWindow(props WindowProps) *gtk.Window {
-	if !gtk4layershell.IsSupported() {
-		log.Fatalln("gtk-layer-shell not supported")
-	}
+	// if !layershell.IsSupported() {
+	// 	log.Fatalln("gtk-layer-shell not supported")
+	// }
 
-	w := gtk.NewWindow()
+	w, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 
 	w.SetName(props.Name)
 
-	gtk4layershell.InitForWindow(w)
-	gtk4layershell.SetNamespace(w, props.Name)
+	layershell.InitForWindow(w)
+	// layershell.SetNamespace(w, props.Name)
 
 	SetAnchor(w, props.Anchor)
 	SetLayer(w, LayerTop)
@@ -80,29 +74,29 @@ func NewWindow(props WindowProps) *gtk.Window {
 func SetAnchor(w *gtk.Window, anchor Position) {
 	for position, edge := range Positions {
 		match := position&anchor != 0
-		gtk4layershell.SetAnchor(w, edge, match)
+		layershell.SetAnchor(w, edge, match)
 	}
 }
 
 func SetMargin(w *gtk.Window, position Position, value int) {
-	gtk4layershell.SetMargin(w, Positions[position], value)
+	layershell.SetMargin(w, Positions[position], value)
 }
 
 func SetLayer(w *gtk.Window, layer Layer) {
 	if value, ok := Layers[layer]; ok {
-		gtk4layershell.SetLayer(w, value)
+		layershell.SetLayer(w, value)
 	}
 }
 
 func SetExclusiveZone(w *gtk.Window, zone ExclusiveZone) {
 	if zone == ExclusiveZoneNormal {
-		gtk4layershell.SetExclusiveZone(w, 0)
+		layershell.SetExclusiveZone(w, 0)
 		return
 	}
 	if zone == ExclusiveZoneIgnore {
-		gtk4layershell.SetExclusiveZone(w, -1)
+		layershell.SetExclusiveZone(w, -1)
 		return
 	}
 
-	gtk4layershell.AutoExclusiveZoneEnable(w)
+	layershell.AutoExclusiveZoneEnable(w)
 }

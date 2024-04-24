@@ -43,14 +43,14 @@ $fg_normal: $color_light;
   font-family: "monospace";
 }
 
+window {
+  background: transparent;
+}
+
 label {
   font-family: "system-ui";
   font-size: 16px;
   color: $color_light;
-}
-
-window {
-  background: transparent;
 }
 
 #bar {
@@ -60,7 +60,6 @@ window {
 
   #date-time {
     @include module;
-    // border: 1px solid red;
 
     .date {
       label {
@@ -69,6 +68,30 @@ window {
     }
     .time {
       font-weight: bold;
+    }
+  }
+
+  #workspaces {
+    @include module($color_gray);
+
+    .workspace {
+      padding: 0px 3px;
+
+      image {
+        transition: color 0.2s ease;
+      }
+
+      &.active {
+        image {
+          color: $color_yellow;
+        }
+      }
+
+      &.occupied:not(.active) {
+        image {
+          color: $color_sky;
+        }
+      }
     }
   }
 
@@ -94,38 +117,6 @@ window {
           color: $color_light;
         }
       }
-    }
-  }
-
-  #workspaces {
-    @include module($color_gray);
-
-    .workspace {
-      all: unset;
-
-      min-width: 24px;
-      min-height: 24px;
-      padding: 0px 3px;
-      // border: 1px solid red;
-
-      // all: unset;
-      // -gtk-icon-style: symbolic;
-
-      // padding: 0px 3px;
-      // transition: background-color 0.2s ease;
-
-      // background-color: $color_gray;
-      // label {
-      //   color: $bg_normal_transparent;
-      // }
-
-      // &.active {
-      //   background-color: $color_yellow;
-      // }
-
-      // &.occupied:not(.active) {
-      //   background-color: $color_sky;
-      // }
     }
   }
 }

@@ -3,76 +3,76 @@ package bar
 import (
 	"fmt"
 	"webflo-dev/apero/services/hyprland"
+	"webflo-dev/apero/ui"
 
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
-type handler struct {
-	hyprland.EventHandler
+type workspacesHandler struct {
+	hyprland.HyprlandEventHandler
 	workspaces map[int]*gtk.Button
 }
 
 func newWorkspaces() *gtk.Box {
 	ids := 5
 
-	box := gtk.NewBox(gtk.OrientationHorizontal, 8)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	box.SetName("workspaces")
-	box.SetCSSClasses([]string{"workspaces"})
+	ui.AddCSSClass(&box.Widget, "workspaces")
 
 	var workspaces = make(map[int]*gtk.Button, 5)
 	for i := range ids {
 		id := i + 1
 		workspace := newWorkspace(id)
-		box.Append(workspace)
+		box.Add(workspace)
 		workspaces[id] = workspace
 	}
 
-	hyprland.WatchEvents(&handler{
+	handler := &workspacesHandler{
 		workspaces: workspaces,
-	}, hyprland.EventWorkspacev2)
+	}
+
+	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
+	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2)
 
 	return box
 }
 
 func newWorkspace(id int) *gtk.Button {
-	button := gtk.NewButton()
-	button.AddCSSClass("workspace")
+	button, _ := gtk.ButtonNew()
+	image := ui.NewFontSizeImageFromIconName(fmt.Sprintf("__workspace-%d-symbolic", id))
+	button.Add(image)
 
-	// button.SetIconName(fmt.Sprintf("workspace-%d-empty", id))
-	label := gtk.NewLabel(fmt.Sprintf("%d", id))
-	label.AddCSSClass("circular")
-	button.SetChild(label)
-	button.SetVAlign(gtk.AlignCenter)
+	ui.AddCSSClass(&button.Widget, "workspace")
 
-	button.ConnectClicked(func() {
-		hyprland.Dispatch(fmt.Sprintf("workspace %d", id))
+	button.Connect("clicked", func() {
+		hyprland.Dispatch("workspace %d", id)
 	})
 
 	return button
 }
 
-func (h *handler) WorkspaceV2(activeId int, name string) {
+func (handler *workspacesHandler) WorkspaceV2(activeId int, name string) {
+	glib.IdleAdd(func() {
 
-	workspacesFromHyprland, _ := hyprland.Workspaces()
+		workspacesFromHyprland := hyprland.Workspaces()
 
-	for id, workspace := range h.workspaces {
-
-		if id == activeId {
-			workspace.AddCSSClass("active")
-			workspace.SetIconName(fmt.Sprintf("workspace-%d-active", id))
-		} else {
-			workspace.RemoveCSSClass("active")
-			workspace.SetIconName(fmt.Sprintf("workspace-%d-empty", id))
-			for _, whl := range workspacesFromHyprland {
-				if whl.Id == id {
-					if whl.Windows != 0 {
-						workspace.SetIconName(fmt.Sprintf("workspace-%d-occupied", id))
-						workspace.AddCSSClass("occupied")
-					} else {
-						workspace.RemoveCSSClass("occupied")
+		for id, workspace := range handler.workspaces {
+			if id == activeId {
+				ui.AddCSSClass(&workspace.Widget, "active")
+			} else {
+				ui.RemoveCSSClass(&workspace.Widget, "active")
+				for _, whl := range workspacesFromHyprland {
+					if whl.Id == id {
+						if whl.Windows != 0 {
+							ui.AddCSSClass(&workspace.Widget, "occupied")
+						} else {
+							ui.RemoveCSSClass(&workspace.Widget, "occupied")
+						}
 					}
 				}
 			}
 		}
-	}
+	})
 }

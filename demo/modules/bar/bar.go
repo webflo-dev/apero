@@ -3,7 +3,7 @@ package bar
 import (
 	"webflo-dev/apero/ui"
 
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 func NewBar() *gtk.Window {
@@ -19,48 +19,46 @@ func NewBar() *gtk.Window {
 	ui.SetMargin(window, ui.PositionBottom, 0)
 	ui.SetMargin(window, ui.PositionLeft, 20)
 
-	window.SetCSSClasses([]string{"bar"})
+	ui.AddCSSClass(&window.Widget, "bar")
 
-	box := gtk.NewCenterBox()
-	box.SetStartWidget(newStartBarModule())
-	box.SetCenterWidget(newCenterBarModule())
-	box.SetEndWidget(newEndBarModule())
-	window.SetChild(box)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	box.PackStart(newStartBarModule(), true, true, 0)
+	box.Add(newCenterBarModule())
+	box.PackEnd(newEndBarModule(), true, true, 0)
 
+	window.Add(box)
 	window.SetVisible(true)
 
+	window.ShowAll()
 	return window
 }
 
 func newStartBarModule() *gtk.Box {
-	container := gtk.NewBox(gtk.OrientationHorizontal, 0)
-	container.SetCSSClasses([]string{"start"})
+	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 
-	container.Append(newWorkspaces())
+	container.Add(newWorkspaces())
 
 	return container
 }
 
 func newCenterBarModule() *gtk.Box {
-	container := gtk.NewBox(gtk.OrientationHorizontal, 0)
-	container.SetCSSClasses([]string{"center"})
+	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	container.SetHExpand(false)
 
-	// container.Append(newDateTime())
+	container.Add(newDateTime())
 
 	return container
 }
 
 func newEndBarModule() *gtk.Box {
-	container := gtk.NewBox(gtk.OrientationHorizontal, 0)
-	container.SetCSSClasses([]string{"end"})
+	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 
-	box := gtk.NewBox(gtk.OrientationHorizontal, 8)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	box.SetHExpand(true)
-	box.SetHAlign(gtk.AlignEnd)
+	box.SetHAlign(gtk.ALIGN_END)
 
-	// box.Append(newSystemInfo())
+	box.Add(newSystemInfo())
 
-	container.Append(box)
+	container.Add(box)
 	return container
 }

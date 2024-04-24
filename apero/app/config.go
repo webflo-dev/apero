@@ -19,7 +19,7 @@ var appConfig appConfiguration
 func loadConfig(userConfig *UserConfig) {
 	workingDir, err := os.Getwd()
 	if err != nil {
-		logger.AppLogger.Fatalf("Cannot get working directory. %w", err)
+		logger.AppLogger.Fatalln("Cannot get working directory", err)
 	}
 
 	appConfig = appConfiguration{
@@ -62,6 +62,11 @@ func loadConfig(userConfig *UserConfig) {
 			checkDefaultCssFile()
 		}
 	}
+
+	logger.AppLogger.Println("AppId:", appConfig.AppId)
+	logger.AppLogger.Println("CssFile:", appConfig.CssFile)
+	logger.AppLogger.Println("IconFolder:", appConfig.IconFolder)
+
 }
 
 func checkUserCssFile(cssFile string) bool {

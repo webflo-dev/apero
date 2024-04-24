@@ -3,10 +3,11 @@ package bar
 import (
 	"fmt"
 	"math"
-	"webflo-dev/apero/services/stats"
+	systemStats "webflo-dev/apero/services/system-stats"
+	"webflo-dev/apero/ui"
 
-	"github.com/diamondburned/gotk4/pkg/glib/v2"
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 type systemInfo struct {
@@ -15,60 +16,82 @@ type systemInfo struct {
 	icon  *gtk.Image
 }
 
-const (
-	defaultSystemInfoClass = "info"
-)
+type systemStatsHandler struct {
+	systemStats.SystemStatsEventHandler
+	cpu    *systemInfo
+	memory *systemInfo
+	nvidia *systemInfo
+}
 
 func newSystemInfo() *gtk.Box {
 
-	box := gtk.NewBox(gtk.OrientationHorizontal, 24)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 24)
 	box.SetName("system-info")
 
 	cpu := newSystemInfoBox("_processor-symbolic")
-	box.Append(cpu.box)
+	box.Add(cpu.box)
 
 	memory := newSystemInfoBox("_memory-symbolic")
-	box.Append(memory.box)
+	box.Add(memory.box)
 
 	nvidia := newSystemInfoBox("_gpu-symbolic")
-	box.Append(nvidia.box)
+	box.Add(nvidia.box)
 
-	statsChan := stats.WatchStats()
-	go func() {
-		for {
-			value := <-statsChan
-			glib.IdleAdd(func() {
-				cpu.SetValue(value.Cpu.Usage)
-				memory.SetValue(int(math.Floor((float64(value.Memory.Used) / float64(value.Memory.Total)) * 100)))
-				nvidia.SetValue(value.Nvidia.GpuUsage)
-			})
-		}
-	}()
+	systemStatsHandler := &systemStatsHandler{
+		cpu:    cpu,
+		memory: memory,
+		nvidia: nvidia,
+	}
+	systemStats.WatchSystemStats(systemStatsHandler)
 
 	return box
 }
 
+func (handler *systemStatsHandler) Notify(value *systemStats.SystemStats) {
+	glib.IdleAdd(func() {
+		handler.cpu.SetValue(value.Cpu.Usage)
+		handler.memory.SetValue(int(math.Floor((float64(value.Memory.Used) / float64(value.Memory.Total)) * 100)))
+		handler.nvidia.SetValue(value.Nvidia.GpuUsage)
+	})
+}
+
 func newSystemInfoBox(iconName string) *systemInfo {
-	box := gtk.NewBox(gtk.OrientationHorizontal, 8)
-	box.SetCSSClasses([]string{defaultSystemInfoClass})
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	ui.AddCSSClass(&box.Widget, "info")
 
-	icon := gtk.NewImageFromIconName(iconName)
-	box.Append(icon)
+	icon, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_BUTTON)
+	box.Add(icon)
 
-	label := gtk.NewLabel("")
-	box.Append(label)
+	label, _ := gtk.LabelNew("")
+	box.Add(label)
 
 	return &systemInfo{box, label, icon}
 }
 
-func (s *systemInfo) SetValue(text interface{}) {
-	s.label.SetText(fmt.Sprintf("%2d%%", text))
+type threshold struct {
+	value int
+	level string
 }
 
-func (s *systemInfo) ToggleClass(className string) {
-	if className == "" {
-		s.box.SetCSSClasses([]string{defaultSystemInfoClass})
-	} else {
-		s.box.AddCSSClass(className)
+var thresholds = []threshold{
+	{90, "critical"},
+	{70, "warning"},
+}
+
+func getLevel(value int) string {
+	for _, threshold := range thresholds {
+		if value >= threshold.value {
+			return threshold.level
+		}
 	}
+	return ""
+}
+
+func (s *systemInfo) SetValue(value int) {
+	s.label.SetText(fmt.Sprintf("%2d%%", value))
+
+	for _, threshold := range thresholds {
+		ui.RemoveCSSClass(&s.box.Widget, threshold.level)
+	}
+	ui.AddCSSClass(&s.box.Widget, getLevel(value))
 }

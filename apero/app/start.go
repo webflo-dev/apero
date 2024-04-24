@@ -3,9 +3,8 @@ package app
 import (
 	"webflo-dev/apero/logger"
 
-	"github.com/diamondburned/gotk4/pkg/gdk/v4"
-	"github.com/diamondburned/gotk4/pkg/gio/v2"
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 var application *gtk.Application
@@ -25,36 +24,37 @@ func Start(userConfig *UserConfig) int {
 	loadConfig(userConfig)
 	logger.AppLogger.Println("configuration loaded!")
 
-	logger.AppLogger.Println("AppId:", appConfig.AppId)
-	logger.AppLogger.Println("CssFile:", appConfig.CssFile)
-	logger.AppLogger.Println("IconFolder:", appConfig.IconFolder)
-
 	logger.AppLogger.Println("start IPC...")
 	startIPC()
 	logger.AppLogger.Println("IPC started!")
 
 	logger.AppLogger.Println("start application...")
-	application = gtk.NewApplication(appConfig.AppId, gio.ApplicationFlagsNone)
-	application.ConnectActivate(func() { activate(application, userConfig.UseInspector, userConfig.Windows) })
+
+	gtk.Init(nil)
+
+	application, _ := gtk.ApplicationNew(appConfig.AppId, glib.APPLICATION_FLAGS_NONE)
+	application.Connect("activate", func() { activate(application, userConfig.UseInspector, userConfig.Windows) })
 	logger.AppLogger.Println("application started! 🚀")
 
 	return application.Run([]string{})
 }
 
 func activate(application *gtk.Application, useInspector bool, windowsLoader func() []*gtk.Window) {
-	gtk.WindowSetInteractiveDebugging(useInspector)
+	gtk.SetInteractiveDebugging(useInspector)
 
 	application.Hold()
 
-	iconTheme := gtk.IconThemeGetForDisplay(gdk.DisplayGetDefault())
 	if appConfig.IconFolder != "" {
-		iconTheme.AddSearchPath(appConfig.IconFolder)
+		iconTheme, _ := gtk.IconThemeGetDefault()
+		iconTheme.AppendSearchPath(appConfig.IconFolder)
 	}
 
 	logger.AppLogger.Println("loading CSS from " + appConfig.CssFile)
 	ApplyCSS(appConfig.CssFile)
 	logger.AppLogger.Println("CSS loaded!")
 
-	windowsLoader()
+	if windowsLoader != nil {
+		windowsLoader()
+	}
 
 }

@@ -1,11 +1,11 @@
+window {
+  background: transparent;
+}
+
 label {
   font-family: "system-ui";
   font-size: 16px;
   color: #d8e2e1;
-}
-
-window {
-  background: transparent;
 }
 
 #bar button {
@@ -34,6 +34,38 @@ window {
 
 #bar #date-time .time {
   font-weight: bold;
+}
+
+#bar #workspaces {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #workspaces label {
+  color: #d8e2e1;
+}
+
+#bar #workspaces image {
+  font-size: 1.5rem;
+  color: #626861;
+}
+
+#bar #workspaces .workspace {
+  padding: 0px 3px;
+}
+
+#bar #workspaces .workspace image {
+  transition: color 0.2s ease;
+}
+
+#bar #workspaces .workspace.active image {
+  color: #ecbd10;
+}
+
+#bar #workspaces .workspace.occupied:not(.active) image {
+  color: #32b5c7;
 }
 
 #bar #system-info {
@@ -71,27 +103,4 @@ window {
 
 #bar #system-info .info.critical image {
   color: #d8e2e1;
-}
-
-#bar #workspaces {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid #626861;
-  background-color: rgba(23, 26, 31, 0.85);
-}
-
-#bar #workspaces label {
-  color: #d8e2e1;
-}
-
-#bar #workspaces image {
-  font-size: 1.5rem;
-  color: #626861;
-}
-
-#bar #workspaces .workspace {
-  all: unset;
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0px 3px;
 }

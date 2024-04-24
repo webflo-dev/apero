@@ -10,10 +10,11 @@ in
 
     packages = with pkgs; [
       # gobject-introspection
-      # gtk4
+      gtk3
+      gtk-layer-shell
       # gtk4-layer-shell
       librsvg
-      pkg-config
+      # pkg-config
 
       ### Build tools
       go
@@ -28,7 +29,8 @@ in
       # minitime
     ];
 
-    LD_PRELOAD = "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so";
+    # LD_PRELOAD = "${pkgs.gtk4-layer-shell}/lib/libgtk4-layer-shell.so";
+    LD_PRELOAD = "${pkgs.gtk-layer-shell}/lib/libgtk-layer-shell.so";
 
     shellHook = ''
       export PATH="${pkgs.go}/bin:${pkgs.gopls}/bin:${pkgs.gotools}/bin:$PATH"

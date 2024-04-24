@@ -1,23 +1,25 @@
 package app
 
 import (
-	"github.com/diamondburned/gotk4/pkg/gdk/v4"
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/gtk"
 )
 
-var cssProvider *gtk.CSSProvider
+var cssProvider *gtk.CssProvider
 
 func ApplyCSS(filepath string) {
 	if filepath == "" {
 		filepath = appConfig.CssFile
 	}
 
+	screen, _ := gdk.ScreenGetDefault()
+
 	if cssProvider != nil {
-		gtk.StyleContextRemoveProviderForDisplay(gdk.DisplayGetDefault(), cssProvider)
+		gtk.RemoveProviderForScreen(screen, cssProvider)
 		cssProvider = nil
 	}
 
-	cssProvider = gtk.NewCSSProvider()
+	cssProvider, _ = gtk.CssProviderNew()
 	cssProvider.LoadFromPath(filepath)
-	gtk.StyleContextAddProviderForDisplay(gdk.DisplayGetDefault(), cssProvider, gtk.STYLE_PROVIDER_PRIORITY_USER)
+	gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_USER)
 }

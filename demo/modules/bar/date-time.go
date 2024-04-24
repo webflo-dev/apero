@@ -2,34 +2,38 @@ package bar
 
 import (
 	"time"
+	"webflo-dev/apero/ui"
 
-	"github.com/diamondburned/gotk4/pkg/glib/v2"
-	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 func newDateTime() *gtk.Box {
 
-	dateLabel := gtk.NewLabel(glib.NewDateTimeNowLocal().Format("%A %d %B"))
-	timeLabel := gtk.NewLabel(time.Now().Format("15:04"))
+	// dateLabel, _ := gtk.LabelNew(glib.NewDateTimeNowLocal().Format("%A %d %B"))
+	dateLabel, _ := gtk.LabelNew(time.Now().Format("Monday 02 January"))
+	timeLabel, _ := gtk.LabelNew(time.Now().Format("15:04"))
 
-	box := gtk.NewBox(gtk.OrientationHorizontal, 16)
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 16)
 	box.SetHExpand(true)
-	box.SetHAlign(gtk.AlignCenter)
+	box.SetHAlign(gtk.ALIGN_CENTER)
 	box.SetName("date-time")
-	box.SetCSSClasses([]string{"date-time"})
+	ui.AddCSSClass(&box.Widget, "date-time")
 
-	dateContainer := gtk.NewBox(gtk.OrientationHorizontal, 8)
-	dateContainer.SetCSSClasses([]string{"date"})
-	dateContainer.Append(gtk.NewImageFromIconName("_calendar-day-symbolic"))
-	dateContainer.Append(dateLabel)
+	dateContainer, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	ui.AddCSSClass(&dateContainer.Widget, "date")
+	dateIcon, _ := gtk.ImageNewFromIconName("__calendar-symbolic", gtk.ICON_SIZE_MENU)
+	dateContainer.Add(dateIcon)
+	dateContainer.Add(dateLabel)
 
-	timeContainer := gtk.NewBox(gtk.OrientationHorizontal, 8)
-	timeContainer.SetCSSClasses([]string{"time"})
-	timeContainer.Append(gtk.NewImageFromIconName("_clock-symbolic"))
-	timeContainer.Append(timeLabel)
+	timeContainer, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	ui.AddCSSClass(&timeContainer.Widget, "time")
+	timeIcon, _ := gtk.ImageNewFromIconName("__clock-symbolic", gtk.ICON_SIZE_BUTTON)
+	timeContainer.Add(timeIcon)
+	timeContainer.Add(timeLabel)
 
-	box.Append(dateContainer)
-	box.Append(timeContainer)
+	box.Add(dateContainer)
+	box.Add(timeContainer)
 
 	go func() {
 		for t := range time.Tick(time.Second) {

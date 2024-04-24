@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -8,27 +9,37 @@ import (
 	"webflo-dev/apero/logger"
 )
 
-var hyprlandInstanceSignature = os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
+const (
+	bufferSize     = 8192
+	eventSeperator = ">>"
+)
 
-func createEventsConnection() net.Conn {
-	socketPath := fmt.Sprintf("/tmp/hypr/%s/.socket2.sock", hyprlandInstanceSignature)
-	connection, err := net.Dial("unix", socketPath)
+var hyprlandInstanceSignature = os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
+var eventSocketPath = fmt.Sprintf("/tmp/hypr/%s/.socket2.sock", hyprlandInstanceSignature)
+var writableSocketPath = fmt.Sprintf("/tmp/hypr/%s/.socket.sock", hyprlandInstanceSignature)
+
+type hyprlandIpcService struct {
+	connection net.Conn
+}
+
+func (service *hyprlandIpcService) createEventsConnection() {
+	connection, err := net.Dial("unix", eventSocketPath)
 	if err != nil {
 		logger.AppLogger.Fatalln("Cannot connect to Hyprland service (.socket2.sock)")
 	}
-
-	return connection
+	service.connection = connection
 }
 
-func (s *hyprlandEventService) closeConnection() {
-	if err := s.connection.Close(); err != nil {
+func (service *hyprlandIpcService) closeConnection() {
+	if err := service.connection.Close(); err != nil {
 		logger.AppLogger.Println("Could not close connection", err)
 	}
 }
 
-func (s *hyprlandEventService) receive() ([]EventData, error) {
+func (service *hyprlandIpcService) readEvent() ([]EventData, error) {
+
 	buf := make([]byte, bufferSize)
-	n, err := s.connection.Read(buf)
+	n, err := service.connection.Read(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +66,33 @@ func (s *hyprlandEventService) receive() ([]EventData, error) {
 	return eventData, nil
 }
 
-func createWritableConnection() net.Conn {
-	socketPath := fmt.Sprintf("/tmp/hypr/%s/.socket.sock", hyprlandInstanceSignature)
-	connection, err := net.Dial("unix", socketPath)
+func writeCmd(command string, target any) error {
+	connection, err := net.Dial("unix", writableSocketPath)
 	if err != nil {
-		logger.AppLogger.Fatalln("Cannot connect to Hyprland service (.socket2.sock)")
+		logger.AppLogger.Fatalln("Cannot connect to Hyprland service (.socket.sock)")
 	}
 
-	return connection
+	message := []byte(command)
+	_, err = connection.Write(message)
+	if err != nil {
+		return err
+	}
+
+	reply := make([]byte, 102400)
+	n, err := connection.Read(reply)
+	if err != nil {
+		return err
+	}
+
+	defer connection.Close()
+
+	buf := reply[:n]
+
+	if target != nil {
+		if err := json.Unmarshal(buf, target); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
