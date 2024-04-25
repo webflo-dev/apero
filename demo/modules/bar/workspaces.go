@@ -2,6 +2,7 @@ package bar
 
 import (
 	"fmt"
+	"slices"
 	"webflo-dev/apero/services/hyprland"
 	"webflo-dev/apero/ui"
 
@@ -34,7 +35,7 @@ func newWorkspacesModule() *gtk.Box {
 	}
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
-	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2)
+	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent)
 
 	return box
 }
@@ -57,22 +58,38 @@ func (handler *workspacesHandler) WorkspaceV2(activeId int, name string) {
 	glib.IdleAdd(func() {
 
 		workspacesFromHyprland := hyprland.Workspaces()
-
 		for id, workspace := range handler.workspaces {
+			ui.ToggleCSSClassFromBool(&workspace.Widget, "active", id == activeId)
+
 			if id == activeId {
-				ui.AddCSSClass(&workspace.Widget, "active")
+				if ui.HasCSSClass(&workspace.Widget, "urgent") {
+					ui.RemoveCSSClass(&workspace.Widget, "urgent")
+				}
 			} else {
-				ui.RemoveCSSClass(&workspace.Widget, "active")
 				for _, whl := range workspacesFromHyprland {
 					if whl.Id == id {
-						if whl.Windows != 0 {
-							ui.AddCSSClass(&workspace.Widget, "occupied")
-						} else {
-							ui.RemoveCSSClass(&workspace.Widget, "occupied")
-						}
+						ui.ToggleCSSClassFromBool(&workspace.Widget, "occupied", whl.Windows != 0)
 					}
 				}
 			}
 		}
 	})
+}
+
+func (handler *workspacesHandler) Urgent(windowAddress string) {
+
+	clients := hyprland.Clients()
+	clientIndex := slices.IndexFunc(clients, func(client hyprland.Client) bool {
+		return client.Address == windowAddress
+	})
+
+	if clientIndex == -1 {
+		return
+	}
+
+	client := clients[clientIndex]
+
+	for id, workspace := range handler.workspaces {
+		ui.ToggleCSSClassFromBool(&workspace.Widget, "urgent", id == client.Workspace.Id)
+	}
 }

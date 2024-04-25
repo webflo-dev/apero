@@ -45,6 +45,10 @@ func ActiveWorkspace() Workspace {
 	return hyprlCtl.activeWorkspace
 }
 
+func Clients() []Client {
+	return hyprlCtl.clients
+}
+
 func ActiveClient() Client {
 	return hyprlCtl.activeClient
 }

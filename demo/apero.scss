@@ -81,15 +81,21 @@ label {
         transition: color 0.2s ease;
       }
 
-      &.active {
+      &.active:not(.urgent) {
         image {
           color: $color_yellow;
         }
       }
 
-      &.occupied:not(.active) {
+      &.occupied:not(.active):not(.urgent) {
         image {
           color: $color_sky;
+        }
+      }
+
+      &.urgent {
+        image {
+          color: $color_red;
         }
       }
     }
@@ -123,12 +129,21 @@ label {
   #window-info {
     @include module($color_gray);
 
+    button:hover,
+    .indicator:hover {
+      image {
+        color: $color_yellow;
+      }
+    }
+
     &.xwayland {
       border: 2px solid $color_red;
     }
 
     .active {
-      color: $color_orange;
+      image {
+        color: $color_orange;
+      }
     }
   }
 }

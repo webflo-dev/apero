@@ -11,9 +11,9 @@ import (
 type windowStateHandler struct {
 	hyprland.HyprlandEventHandler
 	box        *gtk.Box
-	pinned     *gtk.Image
-	fullscreen *gtk.Image
-	floating   *gtk.Image
+	pinned     *gtk.Button
+	fullscreen *gtk.Button
+	floating   *gtk.Button
 }
 
 func newWindowInfoModule() *gtk.Box {
@@ -44,15 +44,25 @@ func newWindowInfoModule() *gtk.Box {
 	return box
 }
 
-func newWindowInfo(iconName string, className string) *gtk.Image {
+func newWindowInfo(iconName string, className string) *gtk.Button {
 	icon := ui.NewFontSizeImageFromIconName(iconName)
+	ui.AddCSSClass(&icon.Widget, className)
 
-	ui.AddCSSClass(&icon.Widget, "indicator")
-	if className != "" {
-		ui.AddCSSClass(&icon.Widget, className)
-	}
+	box, _ := gtk.ButtonNew()
+	box.Add(icon)
 
-	return icon
+	box.Connect("clicked", func() {
+		switch className {
+		case "pinned":
+			hyprland.Dispatch("pin address:%s", hyprland.ActiveClient().Address)
+		case "fullscreen":
+			hyprland.Dispatch("fullscreen 1")
+		case "floating":
+			hyprland.Dispatch("togglefloating address:%s", hyprland.ActiveClient().Address)
+		}
+	})
+
+	return box
 }
 
 func (handler *windowStateHandler) ActiveWindowV2(windowAddress string) {
@@ -63,22 +73,22 @@ func (handler *windowStateHandler) ActiveWindowV2(windowAddress string) {
 
 	log.Println("ActiveWindowV2", windowAddress, activeClient.Address, activeClient.XWayland)
 	if windowAddress == activeClient.Address {
-		ui.ToggleCSSClass(&handler.box.Widget, "xwayland", activeClient.XWayland)
+		ui.ToggleCSSClassFromBool(&handler.box.Widget, "xwayland", activeClient.XWayland)
 	}
 }
 
 func (handler *windowStateHandler) Fullscreen(fullscreen bool) {
-	ui.ToggleCSSClass(&handler.fullscreen.Widget, "active", fullscreen)
+	ui.ToggleCSSClassFromBool(&handler.fullscreen.Widget, "active", fullscreen)
 }
 
 func (handler *windowStateHandler) ChangeFloatingMode(windowAddress string, floating bool) {
 	if windowAddress == hyprland.ActiveClient().Address {
-		ui.ToggleCSSClass(&handler.floating.Widget, "active", floating)
+		ui.ToggleCSSClassFromBool(&handler.floating.Widget, "active", floating)
 	}
 }
 
 func (handler *windowStateHandler) Pin(windowAddress string, pinned bool) {
 	if windowAddress == hyprland.ActiveClient().Address {
-		ui.ToggleCSSClass(&handler.pinned.Widget, "active", pinned)
+		ui.ToggleCSSClassFromBool(&handler.pinned.Widget, "active", pinned)
 	}
 }

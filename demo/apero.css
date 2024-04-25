@@ -60,12 +60,16 @@ label {
   transition: color 0.2s ease;
 }
 
-#bar #workspaces .workspace.active image {
+#bar #workspaces .workspace.active:not(.urgent) image {
   color: #ecbd10;
 }
 
-#bar #workspaces .workspace.occupied:not(.active) image {
+#bar #workspaces .workspace.occupied:not(.active):not(.urgent) image {
   color: #32b5c7;
+}
+
+#bar #workspaces .workspace.urgent image {
+  color: #cf3746;
 }
 
 #bar #system-info {
@@ -121,10 +125,15 @@ label {
   color: #626861;
 }
 
+#bar #window-info button:hover image,
+#bar #window-info .indicator:hover image {
+  color: #ecbd10;
+}
+
 #bar #window-info.xwayland {
   border: 2px solid #cf3746;
 }
 
-#bar #window-info .active {
+#bar #window-info .active image {
   color: #df7c2c;
 }

@@ -33,7 +33,7 @@ func (service *hyprlandCtlService) syncActiveWorkspace() {
 }
 
 func (service *hyprlandCtlService) syncClients() {
-	writeCmd("j/clients %s", &service.clients)
+	writeCmd("j/clients", &service.clients)
 	service.syncActiveClient()
 }
 
