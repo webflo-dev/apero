@@ -23,7 +23,7 @@ type systemStatsHandler struct {
 	nvidia *systemInfo
 }
 
-func newSystemInfo() *gtk.Box {
+func newSystemInfoModule() *gtk.Box {
 
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 24)
 	box.SetName("system-info")

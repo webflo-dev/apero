@@ -6,17 +6,6 @@ import (
 	"webflo-dev/apero/logger"
 )
 
-var eventService = newHyprlandEventService()
-
-func newHyprlandEventService() *hyprlandEventService {
-	service := &hyprlandEventService{
-		listening:   false,
-		subscribers: make(map[EventType][]HyprlandEventHandler),
-	}
-
-	return service
-}
-
 func (service *hyprlandEventService) listen() {
 	if service.listening {
 		return
@@ -56,6 +45,10 @@ func ActiveWorkspace() Workspace {
 	return hyprlCtl.activeWorkspace
 }
 
+func ActiveClient() Client {
+	return hyprlCtl.activeClient
+}
+
 func WatchEvents(handler HyprlandEventHandler, events ...EventType) {
 	if eventService.listening == false {
 		eventService.listen()
@@ -67,27 +60,27 @@ func WatchEvents(handler HyprlandEventHandler, events ...EventType) {
 }
 
 type HyprlandEventHandler interface {
-	Workspace(workspaceName string)
+	// Workspace(workspaceName string)
 	WorkspaceV2(workspaceId int, workspaceName string)
 	FocusedMonitor(monitorName string, workspaceName string)
-	ActiveWindow(windowClass string, windowTitle string)
+	// ActiveWindow(windowClass string, windowTitle string)
 	ActiveWindowV2(windowAddress string)
 	Fullscreen(fullscreen bool)
 	MonitorRemoved(monitorName string)
-	MonitorAdded(monitorName string)
+	// MonitorAdded(monitorName string)
 	MonitorAddedV2(monitorId int, monitorName string, monitorDescription string)
-	CreateWorkspace(workspaceName string)
+	// CreateWorkspace(workspaceName string)
 	CreateWorkspaceV2(workspaceId int, workspaceName string)
-	DestroyWorkspace(workspaceName string)
+	// DestroyWorkspace(workspaceName string)
 	DestroyWorkspaceV2(workspaceId int, workspaceName string)
-	MoveWorkspace(workspaceName string, monitorName string)
+	// MoveWorkspace(workspaceName string, monitorName string)
 	MoveWorkspaceV2(workspaceId int, workspaceName string, monitorName string)
 	RenameWorkspace(workspaceId int, newWorkspaceName string)
 	ActiveSepcial(workspaceName string, monitorName string)
 	ActiveLayout(keyboardName string, layoutName string)
 	OpenWindow(windowAddress string, workspaceName string, windowClass string, windowTitle string)
 	CloseWindow(windowAddress string)
-	MoveWindow(windowAddress string, workspaceName string)
+	// MoveWindow(windowAddress string, workspaceName string)
 	MoveWindowV2(windowAddress string, workspaceId int, workspaceName string)
 	OpenLayer(namespace string)
 	CloseLayer(namespace string)

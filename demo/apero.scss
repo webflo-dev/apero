@@ -119,4 +119,16 @@ label {
       }
     }
   }
+
+  #window-info {
+    @include module($color_gray);
+
+    &.xwayland {
+      border: 2px solid $color_red;
+    }
+
+    .active {
+      color: $color_orange;
+    }
+  }
 }

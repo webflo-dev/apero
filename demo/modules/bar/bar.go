@@ -34,9 +34,10 @@ func NewBar() *gtk.Window {
 }
 
 func newStartBarModule() *gtk.Box {
-	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 
-	container.Add(newWorkspaces())
+	container.Add(newWorkspacesModule())
+	container.Add(newWindowInfoModule())
 
 	return container
 }
@@ -45,7 +46,7 @@ func newCenterBarModule() *gtk.Box {
 	container, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	container.SetHExpand(false)
 
-	container.Add(newDateTime())
+	container.Add(newDateTimeModule())
 
 	return container
 }
@@ -57,7 +58,7 @@ func newEndBarModule() *gtk.Box {
 	box.SetHExpand(true)
 	box.SetHAlign(gtk.ALIGN_END)
 
-	box.Add(newSystemInfo())
+	box.Add(newSystemInfoModule())
 
 	container.Add(box)
 	return container

@@ -8,7 +8,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-func newDateTime() *gtk.Box {
+func newDateTimeModule() *gtk.Box {
 
 	// dateLabel, _ := gtk.LabelNew(glib.NewDateTimeNowLocal().Format("%A %d %B"))
 	dateLabel, _ := gtk.LabelNew(time.Now().Format("Monday 02 January"))

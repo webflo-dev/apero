@@ -14,7 +14,7 @@ type workspacesHandler struct {
 	workspaces map[int]*gtk.Button
 }
 
-func newWorkspaces() *gtk.Box {
+func newWorkspacesModule() *gtk.Box {
 	ids := 5
 
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)

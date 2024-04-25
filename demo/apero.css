@@ -104,3 +104,27 @@ label {
 #bar #system-info .info.critical image {
   color: #d8e2e1;
 }
+
+#bar #window-info {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #window-info label {
+  color: #d8e2e1;
+}
+
+#bar #window-info image {
+  font-size: 1.5rem;
+  color: #626861;
+}
+
+#bar #window-info.xwayland {
+  border: 2px solid #cf3746;
+}
+
+#bar #window-info .active {
+  color: #df7c2c;
+}

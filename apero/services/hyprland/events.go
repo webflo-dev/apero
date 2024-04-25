@@ -11,15 +11,34 @@ type hyprlandEventService struct {
 }
 
 type SyncMethod func()
+type PreProcessor func([]string) []string
 
-type SyncMap struct {
-	methodName  string
-	syncMethods []SyncMethod
+type ProcessMap struct {
+	methodName   string
+	preprocessor []PreProcessor
+	syncMethods  []SyncMethod
+}
+
+var eventService = newHyprlandEventService()
+
+func newHyprlandEventService() *hyprlandEventService {
+	service := &hyprlandEventService{
+		listening:   false,
+		subscribers: make(map[EventType][]HyprlandEventHandler),
+	}
+
+	return service
 }
 
 func (s *hyprlandEventService) processEvent(msg EventData) {
-	rawValues := strings.Split(msg.Data, ",")
 	eventData := eventMap[msg.Type]
+
+	rawValues := strings.Split(msg.Data, ",")
+	if eventData.preprocessor != nil {
+		for _, preprocessor := range eventData.preprocessor {
+			rawValues = preprocessor(rawValues)
+		}
+	}
 
 	if eventData.syncMethods != nil {
 		for _, syncMethod := range eventData.syncMethods {
@@ -75,39 +94,101 @@ const (
 	EventPin                EventType = "pin"
 )
 
-var eventMap = map[EventType]SyncMap{
-	EventWorkspace:          {"Workspace", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventWorkspacev2:        {"WorkspaceV2", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventFocusedMonitor:     {"FocusedMonitor", nil},
-	EventActiveWindow:       {"ActiveWindow", nil},
-	EventActiveWindowv2:     {"ActiveWindowV2", nil},
-	EventFullscreen:         {"Fullscreen", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventMonitorRemoved:     {"MonitorRemoved", nil},
-	EventMonitorAdded:       {"MonitorAdded", nil},
-	EventMonitorAddedv2:     {"MonitorAddedV2", nil},
-	EventCreateWorkspace:    {"CreateWorkspace", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventCreateWorkspacev2:  {"CreateWorkspaceV2", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventDestroyWorkspace:   {"DestroyWorkspace", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventDestroyWorkspacev2: {"DestroyWorkspaceV2", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventMoveWorkspace:      {"MoveWorkspace", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventMoveWorkspacev2:    {"MoveWorkspaceV2", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventRenameWorkspace:    {"RenameWorkspace", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventActiveSpecial:      {"ActiveSepcial", nil},
-	EventActiveLayout:       {"ActiveLayout", nil},
-	EventOpenWindow:         {"OpenWindow", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventCloseWindow:        {"CloseWindow", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventMoveWindow:         {"MoveWindow", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventMoveWindowv2:       {"MoveWindowV2", []SyncMethod{hyprlCtl.syncWorkspaces}},
-	EventOpenLayer:          {"OpenLayer", nil},
-	EventCloseLayer:         {"CloseLayer", nil},
-	EventSubMap:             {"SubMap", nil},
-	EventChangeFloatingMode: {"ChangeFloatingMode", nil},
-	EventUrgent:             {"Urgent", nil},
-	EventMinimize:           {"Minimize", nil},
-	EventScreencast:         {"Screencast", nil},
-	EventWindowtitle:        {"WindowTitle", nil},
-	EventIgnoreGroupLock:    {"IgnoreGrouplock", nil},
-	EventLockGroups:         {"LockGroups", nil},
-	EventConfigreloaded:     {"ConfigReloaded", nil},
-	EventPin:                {"Pin", nil},
+var eventMap = map[EventType]ProcessMap{
+	// EventWorkspace:          {"Workspace", nil, nil},
+
+	EventWorkspacev2: {"WorkspaceV2",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	EventFocusedMonitor: {"FocusedMonitor", nil, nil},
+
+	// EventActiveWindow:       {"ActiveWindow", nil, nil},
+
+	EventActiveWindowv2: {"ActiveWindowV2",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncActiveClient}},
+
+	EventFullscreen: {"Fullscreen",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
+
+	EventMonitorRemoved: {"MonitorRemoved", nil, nil},
+
+	// EventMonitorAdded:   {"MonitorAdded", nil, nil},
+
+	EventMonitorAddedv2: {"MonitorAddedV2", nil, nil},
+
+	// EventCreateWorkspace:    {"CreateWorkspace", nil, nil},
+
+	EventCreateWorkspacev2: {"CreateWorkspaceV2",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	// EventDestroyWorkspace:   {"DestroyWorkspace", nil, nil},
+
+	EventDestroyWorkspacev2: {"DestroyWorkspaceV2",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	// EventMoveWorkspace:      {"MoveWorkspace", nil, []SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	EventMoveWorkspacev2: {"MoveWorkspaceV2",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	EventRenameWorkspace: {"RenameWorkspace",
+		nil,
+		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+
+	EventActiveSpecial: {"ActiveSepcial", nil, nil},
+
+	EventActiveLayout: {"ActiveLayout", nil, nil},
+
+	EventOpenWindow: {"OpenWindow",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
+
+	EventCloseWindow: {"CloseWindow",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
+	// EventMoveWindow:         {"MoveWindow", nil, nil},
+
+	EventMoveWindowv2: {"MoveWindowV2",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
+
+	EventOpenLayer: {"OpenLayer", nil, nil},
+
+	EventCloseLayer: {"CloseLayer", nil, nil},
+
+	EventSubMap: {"SubMap", nil, nil},
+
+	EventChangeFloatingMode: {"ChangeFloatingMode",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncClients}},
+
+	EventUrgent: {"Urgent",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		nil},
+
+	EventMinimize: {"Minimize",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		nil},
+
+	EventScreencast: {"Screencast", nil, nil},
+
+	EventWindowtitle: {"WindowTitle",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncClients}},
+
+	EventIgnoreGroupLock: {"IgnoreGrouplock", nil, nil},
+
+	EventLockGroups: {"LockGroups", nil, nil},
+
+	EventConfigreloaded: {"ConfigReloaded", nil, nil},
+
+	EventPin: {"Pin",
+		[]PreProcessor{hyprlCtl.preprocessClientAddress},
+		[]SyncMethod{hyprlCtl.syncClients}},
 }
