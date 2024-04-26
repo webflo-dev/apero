@@ -22,13 +22,13 @@ func newDateTimeModule() *gtk.Box {
 
 	dateContainer, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	ui.AddCSSClass(&dateContainer.Widget, "date")
-	dateIcon, _ := gtk.ImageNewFromIconName("__calendar-symbolic", gtk.ICON_SIZE_MENU)
+	dateIcon := ui.NewFontSizeImageFromIconName(Icon_DateTime_Date)
 	dateContainer.Add(dateIcon)
 	dateContainer.Add(dateLabel)
 
 	timeContainer, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	ui.AddCSSClass(&timeContainer.Widget, "time")
-	timeIcon, _ := gtk.ImageNewFromIconName("__clock-symbolic", gtk.ICON_SIZE_BUTTON)
+	timeIcon := ui.NewFontSizeImageFromIconName(Icon_DateTime_Time)
 	timeContainer.Add(timeIcon)
 	timeContainer.Add(timeLabel)
 

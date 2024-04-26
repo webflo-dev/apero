@@ -1,7 +1,6 @@
 package bar
 
 import (
-	"log"
 	"webflo-dev/apero/services/hyprland"
 	"webflo-dev/apero/ui"
 
@@ -20,9 +19,9 @@ func newWindowInfoModule() *gtk.Box {
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	box.SetName("window-info")
 
-	pinned := newWindowInfo("__window-state-pinned-symbolic", "pinned")
-	fullscreen := newWindowInfo("__window-state-fullscreen-symbolic", "fullscreen")
-	floating := newWindowInfo("__window-state-floating-symbolic", "floating")
+	pinned := newWindowInfo(Icon_WindowState_Pinned, "pinned")
+	fullscreen := newWindowInfo(Icon_WindowState_Fullscreen, "fullscreen")
+	floating := newWindowInfo(Icon_WindowState_Floating, "floating")
 
 	box.Add(fullscreen)
 	box.Add(floating)
@@ -71,7 +70,6 @@ func (handler *windowStateHandler) ActiveWindowV2(windowAddress string) {
 	handler.Fullscreen(activeClient.Fullscreen)
 	handler.ChangeFloatingMode(windowAddress, activeClient.Floating)
 
-	log.Println("ActiveWindowV2", windowAddress, activeClient.Address, activeClient.XWayland)
 	if windowAddress == activeClient.Address {
 		ui.ToggleCSSClassFromBool(&handler.box.Widget, "xwayland", activeClient.XWayland)
 	}

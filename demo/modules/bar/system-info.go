@@ -1,6 +1,7 @@
 package bar
 
 import (
+	"demo/utils"
 	"fmt"
 	"math"
 	systemStats "webflo-dev/apero/services/system-stats"
@@ -28,21 +29,20 @@ func newSystemInfoModule() *gtk.Box {
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 24)
 	box.SetName("system-info")
 
-	cpu := newSystemInfoBox("_processor-symbolic")
+	cpu := newSystemInfoBox(Icon_SystemStats_Cpu)
 	box.Add(cpu.box)
 
-	memory := newSystemInfoBox("_memory-symbolic")
+	memory := newSystemInfoBox(Icon_SystemStats_Memory)
 	box.Add(memory.box)
 
-	nvidia := newSystemInfoBox("_gpu-symbolic")
+	nvidia := newSystemInfoBox(Icon_SystemStats_Gpu)
 	box.Add(nvidia.box)
 
-	systemStatsHandler := &systemStatsHandler{
+	systemStats.WatchSystemStats(&systemStatsHandler{
 		cpu:    cpu,
 		memory: memory,
 		nvidia: nvidia,
-	}
-	systemStats.WatchSystemStats(systemStatsHandler)
+	})
 
 	return box
 }
@@ -59,7 +59,7 @@ func newSystemInfoBox(iconName string) *systemInfo {
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	ui.AddCSSClass(&box.Widget, "info")
 
-	icon, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_BUTTON)
+	icon := ui.NewFontSizeImageFromIconName(iconName)
 	box.Add(icon)
 
 	label, _ := gtk.LabelNew("")
@@ -68,30 +68,18 @@ func newSystemInfoBox(iconName string) *systemInfo {
 	return &systemInfo{box, label, icon}
 }
 
-type threshold struct {
-	value int
-	level string
-}
-
-var thresholds = []threshold{
-	{90, "critical"},
-	{70, "warning"},
-}
-
-func getLevel(value int) string {
-	for _, threshold := range thresholds {
-		if value >= threshold.value {
-			return threshold.level
-		}
-	}
-	return ""
+var statsThresholds = utils.Threshold[int, string]{
+	90: "critical",
+	70: "warning",
 }
 
 func (s *systemInfo) SetValue(value int) {
 	s.label.SetText(fmt.Sprintf("%2d%%", value))
 
-	for _, threshold := range thresholds {
-		ui.RemoveCSSClass(&s.box.Widget, threshold.level)
+	for _, text := range statsThresholds {
+		ui.RemoveCSSClass(&s.box.Widget, text)
 	}
-	ui.AddCSSClass(&s.box.Widget, getLevel(value))
+
+	threshold, _ := statsThresholds.GetThreshold(value)
+	ui.AddCSSClass(&s.box.Widget, threshold)
 }

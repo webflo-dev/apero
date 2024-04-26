@@ -1,6 +1,7 @@
 package bar
 
 import (
+	"webflo-dev/apero/services/notifications"
 	"webflo-dev/apero/ui"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -30,6 +31,10 @@ func NewBar() *gtk.Window {
 	window.SetVisible(true)
 
 	window.ShowAll()
+
+	// systray.NewSystrayService()
+	notifications.StartNotificationServer()
+
 	return window
 }
 

@@ -42,7 +42,7 @@ func newWorkspacesModule() *gtk.Box {
 
 func newWorkspace(id int) *gtk.Button {
 	button, _ := gtk.ButtonNew()
-	image := ui.NewFontSizeImageFromIconName(fmt.Sprintf("__workspace-%d-symbolic", id))
+	image := ui.NewFontSizeImageFromIconName(fmt.Sprintf(Icon_Workspace_pattern, id))
 	button.Add(image)
 
 	ui.AddCSSClass(&button.Widget, "workspace")
