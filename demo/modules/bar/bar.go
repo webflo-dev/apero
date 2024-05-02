@@ -8,6 +8,8 @@ import (
 )
 
 func NewBar() *gtk.Window {
+	notifications.StartNotificationServer()
+
 	window := ui.NewWindow(ui.WindowProps{
 		Name:          "bar",
 		Layer:         ui.LayerTop,
@@ -32,9 +34,6 @@ func NewBar() *gtk.Window {
 
 	window.ShowAll()
 
-	// systray.NewSystrayService()
-	notifications.StartNotificationServer()
-
 	return window
 }
 
@@ -52,6 +51,7 @@ func newCenterBarModule() *gtk.Box {
 	container.SetHExpand(false)
 
 	container.Add(newDateTimeModule())
+	container.Add(newNotificationModule())
 
 	return container
 }

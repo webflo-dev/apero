@@ -1,65 +1,84 @@
 package notifications
 
-import "time"
+import (
+	"errors"
+)
 
-type notificationServer struct {
-	counter       int
-	notifications map[int]notification
+type NotificationsEventHandler interface {
+	NewNotification(notification Notification)
+	NotificationRemoved(id uint32)
+	NotificationsCleared()
+	DoNotDisturbChanged(enabled bool)
 }
 
-func newNotificationServer() *notificationServer {
-	return &notificationServer{
-		counter:       0,
-		notifications: make(map[int]notification),
+func GetServerCapabilities() []string {
+	return server.GetCapabilities()
+}
+func GetServerInformation() (string, string, string, string) {
+	return server.GetServerInformation()
+}
+
+func WatchNotifications(handler NotificationsEventHandler) error {
+	if server.started == false {
+		Logger.Println("notifications server is not started")
+		return errors.New("notifications server is not started")
+	}
+
+	server.subscribers = append(server.subscribers, handler)
+
+	return nil
+}
+
+func SetDoNotDisturb(enabled bool) {
+	if server.doNotDisturb == enabled {
+		return
+	}
+
+	server.doNotDisturb = enabled
+
+	for _, handler := range server.subscribers {
+		handler.DoNotDisturbChanged(enabled)
 	}
 }
 
-func (server notificationServer) GetCapabilities() []string {
-	return []string{
-		"action-icons",
-		"actions",
-		"body",
-		"body-hyperlinks",
-		// "body-images",
-		"body-markup",
-		// "icon-multi",
-		"icon-static",
-		"persistence",
-		// "sound",
+func ClearAllNotifications(notifyEach bool) {
+	if notifyEach == false {
+		clear(server.notifications)
+		for _, handler := range server.subscribers {
+			handler.NotificationsCleared()
+		}
+	} else {
+		ids := make([]uint32, 0, len(server.notifications))
+		for id := range server.notifications {
+			ids = append(ids, id)
+		}
+		for id := range ids {
+			server.CloseNotification(uint32(id))
+		}
 	}
 }
 
-func (server notificationServer) GetServerInformation() (string, string, string, string) {
-	return "apero", "webflo-dev", "0.1", "1.2"
+func GetNotifications() []Notification {
+	notifications := make([]Notification, 0, len(server.notifications))
+	for _, n := range server.notifications {
+		notifications = append(notifications, n)
+	}
+	return notifications
 }
 
-func (server notificationServer) Notify(appName string, replacesId int, appIcon string, summary string, body string, actions []string, hints hints, expireTimeout int) int {
-	// Logger.Println("Notify!!", appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout)
-
-	id := replacesId
-	if id == 0 {
-		server.counter++
-		id = server.counter
-	}
-
-	n := notification{
-		id:        id,
-		appName:   appName,
-		appIcon:   appIcon,
-		summary:   summary,
-		body:      body,
-		actions:   actions,
-		hints:     hints,
-		timestamp: time.Now().Unix(),
-	}
-
-	server.notifications[n.id] = n
-
-	Logger.Printf("Notification > %+v\n", n)
-
-	return n.id
+func GetNotification(id uint32) (Notification, bool) {
+	n, ok := server.notifications[id]
+	return n, ok
 }
 
-func (server notificationServer) CloseNotification(id int) {
-	delete(server.notifications, id)
+func HasNotifications() bool {
+	return len(server.notifications) > 0
+}
+
+func DoNotDisturb() bool {
+	return server.doNotDisturb
+}
+
+func InvokeAction(notificationId uint32, actionKey string) {
+
 }

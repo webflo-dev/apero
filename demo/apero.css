@@ -137,3 +137,23 @@ label {
 #bar #window-info .active image {
   color: #df7c2c;
 }
+
+#bar #notifications button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #626861;
+  background-color: rgba(23, 26, 31, 0.85);
+}
+
+#bar #notifications button label {
+  color: #d8e2e1;
+}
+
+#bar #notifications button image {
+  font-size: 1.5rem;
+  color: #ecbd10;
+}
+
+#bar #notifications.empty image {
+  color: #626861;
+}

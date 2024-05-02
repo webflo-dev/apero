@@ -146,4 +146,14 @@ label {
       }
     }
   }
+
+  #notifications {
+    @include module;
+
+    &.empty {
+      image {
+        color: $color_gray;
+      }
+    }
+  }
 }
