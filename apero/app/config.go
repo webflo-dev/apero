@@ -4,8 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-
-	"webflo-dev/apero/logger"
 )
 
 type appConfiguration struct {
@@ -19,7 +17,7 @@ var appConfig appConfiguration
 func loadConfig(userConfig *UserConfig) {
 	workingDir, err := os.Getwd()
 	if err != nil {
-		logger.AppLogger.Fatalln("Cannot get working directory", err)
+		appLogger.Fatalln("Cannot get working directory", err)
 	}
 
 	appConfig = appConfiguration{
@@ -54,8 +52,8 @@ func loadConfig(userConfig *UserConfig) {
 			if ok := checkUserCssFile(cssFile); ok {
 				appConfig.CssFile = cssFile
 			} else {
-				logger.AppLogger.Println("user CSS file not found:", cssFile)
-				logger.AppLogger.Println("default CSS file will be used:", cssFile)
+				appLogger.Println("user CSS file not found:", cssFile)
+				appLogger.Println("default CSS file will be used:", cssFile)
 				checkDefaultCssFile()
 			}
 		} else {
@@ -63,9 +61,9 @@ func loadConfig(userConfig *UserConfig) {
 		}
 	}
 
-	logger.AppLogger.Println("AppId:", appConfig.AppId)
-	logger.AppLogger.Println("CssFile:", appConfig.CssFile)
-	logger.AppLogger.Println("IconFolder:", appConfig.IconFolder)
+	appLogger.Println("AppId:", appConfig.AppId)
+	appLogger.Println("CssFile:", appConfig.CssFile)
+	appLogger.Println("IconFolder:", appConfig.IconFolder)
 
 }
 
@@ -76,7 +74,7 @@ func checkUserCssFile(cssFile string) bool {
 
 func checkDefaultCssFile() {
 	if _, err := os.Stat(appConfig.CssFile); errors.Is(err, os.ErrNotExist) {
-		logger.AppLogger.Println("default CSS file not found. CSS won't be applied", appConfig.CssFile)
+		appLogger.Println("default CSS file not found. CSS won't be applied", appConfig.CssFile)
 		appConfig.CssFile = ""
 	}
 }

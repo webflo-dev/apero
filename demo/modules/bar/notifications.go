@@ -1,6 +1,8 @@
 package bar
 
 import (
+	"log"
+	"webflo-dev/apero/services/notification"
 	"webflo-dev/apero/services/notifications"
 	"webflo-dev/apero/ui"
 
@@ -15,10 +17,22 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-type notificationHandler struct {
+type notificationIndicatorHandler struct {
 	notifications.NotificationsEventHandler
 	box  *gtk.Box
 	icon *gtk.Image
+}
+
+type notificationActionHandler struct{}
+
+func (h *notificationActionHandler) doAction1() {
+	log.Println("do action1")
+}
+func (h *notificationActionHandler) doAction2() {
+	log.Println("do action2")
+}
+func doGenericAction() {
+
 }
 
 func newNotificationModule() *gtk.Box {
@@ -32,7 +46,7 @@ func newNotificationModule() *gtk.Box {
 
 	box.Add(button)
 
-	handler := &notificationHandler{
+	handler := &notificationIndicatorHandler{
 		box:  box,
 		icon: icon,
 	}
@@ -51,7 +65,35 @@ func newNotificationModule() *gtk.Box {
 			notifications.ClearAllNotifications(false)
 			return true
 		case gdk.BUTTON_MIDDLE:
-			notifications.EmitActionInvoked()
+			notif := notification.NewNotification(&notificationActionHandler{}, "Message from Apero", "bla bla bla")
+
+			notif.WithUrgency(notification.UrgencyCritical)
+			notif.WithActions(notification.Actions[*notificationActionHandler]{
+				"action1": (*notificationActionHandler).doAction1,
+				"action2": (*notificationActionHandler).doAction2,
+			})
+
+			id := notification.Notify(notif)
+
+			log.Println("Notification ID:", id)
+			notifications.InvokeAction(id, "action2")
+
+			// notif := &notification.Notification{
+			// 	appName: "test",
+			// 	actions: notification.Actions{
+			// 		"action1": func() {
+			// 			fmt.Println("action1")
+			// 		},
+			// 		"action2": func() {
+			// 			fmt.Println("action1")
+			// 		},
+			// 	},
+			// }
+			// id := notification.Notify(*notif)
+
+			// log.Println("Notification ID:", id)
+
+			// notifications.InvokeAction(id, "action2")
 			return true
 		default:
 			return false
@@ -82,7 +124,7 @@ func newNotificationModule() *gtk.Box {
 	return box
 }
 
-func (handler *notificationHandler) update(doNotDisturb bool, HasNotifications bool) {
+func (handler *notificationIndicatorHandler) update(doNotDisturb bool, HasNotifications bool) {
 	ui.ToggleCSSClassFromBool(&handler.box.Widget, "empty", HasNotifications == false)
 
 	if doNotDisturb {
@@ -92,14 +134,14 @@ func (handler *notificationHandler) update(doNotDisturb bool, HasNotifications b
 	}
 }
 
-func (handler *notificationHandler) NewNotification(_ notifications.Notification) {
+func (handler *notificationIndicatorHandler) NewNotification(_ notifications.Notification) {
 	handler.update(notifications.DoNotDisturb(), true)
 }
 
-func (handler *notificationHandler) DoNotDisturbChanged(enabled bool) {
+func (handler *notificationIndicatorHandler) DoNotDisturbChanged(enabled bool) {
 	handler.update(enabled, notifications.HasNotifications())
 }
 
-func (handler *notificationHandler) NotificationsCleared() {
+func (handler *notificationIndicatorHandler) NotificationsCleared() {
 	handler.update(notifications.DoNotDisturb(), notifications.HasNotifications())
 }

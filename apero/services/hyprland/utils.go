@@ -1,13 +1,32 @@
 package hyprland
 
 import (
+	"log"
 	"reflect"
 	"strconv"
 )
 
 func callHandler(handler interface{}, target string, rawValues []string) {
+	value := reflect.ValueOf(handler)
+	if !value.IsValid() {
+		log.Println("handler not found")
+		return
+	}
+	log.Printf("value: %+v", value)
+
 	method := reflect.ValueOf(handler).MethodByName(target)
+	if !method.IsValid() {
+		log.Println("method not found")
+		return
+	}
+	log.Printf("method(%s) %+v", target, method)
+
 	methodType := method.Type()
+	if !method.IsValid() {
+		log.Println("method type invalid")
+		return
+	}
+	log.Printf("type: %+v", methodType)
 
 	in := make([]reflect.Value, methodType.NumIn())
 
@@ -26,5 +45,6 @@ func callHandler(handler interface{}, target string, rawValues []string) {
 			break
 		}
 	}
+
 	method.Call(in)
 }

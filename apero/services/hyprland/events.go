@@ -6,8 +6,9 @@ import (
 
 type hyprlandEventService struct {
 	hyprlandIpcService
-	listening   bool
-	subscribers map[EventType][]HyprlandEventHandler
+	listening bool
+	// subscribers map[EventType][]HyprlandEventHandler
+	subscribers map[EventType][]any
 }
 
 type SyncMethod func()
@@ -23,8 +24,9 @@ var eventService = newHyprlandEventService()
 
 func newHyprlandEventService() *hyprlandEventService {
 	service := &hyprlandEventService{
-		listening:   false,
-		subscribers: make(map[EventType][]HyprlandEventHandler),
+		listening: false,
+		// subscribers: make(map[EventType][]HyprlandEventHandler),
+		subscribers: make(map[EventType][]any),
 	}
 
 	return service

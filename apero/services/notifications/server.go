@@ -2,6 +2,8 @@ package notifications
 
 import (
 	"errors"
+	"log"
+	"reflect"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
@@ -9,8 +11,9 @@ import (
 )
 
 const (
-	path  = "/org/freedesktop/Notifications"
-	iface = "org.freedesktop.Notifications"
+	path                = "/org/freedesktop/Notifications"
+	iface               = "org.freedesktop.Notifications"
+	signalActionInvoked = iface + ".ActionInvoked"
 )
 
 type notificationServer struct {
@@ -35,24 +38,24 @@ func newNotificationServer() *notificationServer {
 func StartNotificationServer() error {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
-		Logger.Println("Notification server is disabled (failed to connect to session bus)", err)
+		logger.Println("Notification server is disabled (failed to connect to session bus)", err)
 		return errors.New("Notification server is disabled (failed to connect to session bus)")
 	}
 
 	err = conn.ExportAll(server, path, iface)
 	if err != nil {
-		Logger.Println("Notification server is disabled (failed to export to dbus)", err)
+		logger.Println("Notification server is disabled (failed to export to dbus)", err)
 		return errors.New("Notification server is disabled (failed to export to dbus)")
 	}
 
 	reply, err := conn.RequestName(iface, dbus.NameFlagDoNotQueue)
 	if err != nil {
-		Logger.Println("Notification server is disabled (failed to request name on session dbus)", err)
+		logger.Println("Notification server is disabled (failed to request name on session dbus)", err)
 		return errors.New("Notification server is disabled (failed to request name on session dbus)")
 	}
 
 	if reply != dbus.RequestNameReplyPrimaryOwner {
-		Logger.Println("Notification server is disabled (name already taken)", err)
+		logger.Println("Notification server is disabled (name already taken)", err)
 		return errors.New("Notification server is disabled (name already taken)")
 	}
 
@@ -66,14 +69,14 @@ func StartNotificationServer() error {
 	}
 	err = conn.Export(introspect.NewIntrospectable(&node), path, "org.freedesktop.DBus.Introspectable")
 	if err != nil {
-		Logger.Println("Failed to export introspectable interface.", err)
+		logger.Println("Failed to export introspectable interface.", err)
 	}
 
 	go func() {
 		defer conn.Close()
 
 		server.started = true
-		Logger.Printf("Listening on iface=%s, path=%s ...\n", iface, path)
+		logger.Printf("Listening on iface=%s, path=%s ...\n", iface, path)
 
 		select {}
 	}()
@@ -112,7 +115,7 @@ func (server notificationServer) Notify(appName string, replacesId uint32, appIc
 
 	server.notifications[n.id] = n
 
-	// Logger.Printf("Notification > %+v\n", n)
+	// logger.Printf("Notification > %+v\n", n)
 
 	if server.doNotDisturb == false {
 		for _, subscriber := range server.subscribers {
@@ -133,16 +136,24 @@ func (server notificationServer) CloseNotification(id uint32) {
 	}
 }
 
-func (server notificationServer) EmitActionInvoked(id uint32, actionKey string) error {
+func (server notificationServer) InvokeAction(notificationId uint32, actionKey string) error {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
-		Logger.Println("Failed to emit signal ActionInvoked (dbus connection)", err)
+		logger.Println("Failed to emit signal ActionInvoked (dbus connection)", err)
 		return errors.New("Failed to emit signal ActionInvoked (dbus connection)")
 	}
-	err = conn.Emit(path, iface+".ActionInvoked", id, actionKey)
+	err = conn.Emit(path, signalActionInvoked, notificationId, actionKey)
 	if err != nil {
-		Logger.Println("Failed to emit signal ActionInvoked (emit signal)", err)
+		logger.Println("Failed to emit signal ActionInvoked (emit signal)", err)
 		return errors.New("Failed to emit signal ActionInvoked (emit signal)")
+	}
+
+	for _, subscriber := range server.subscribers {
+		log.Printf("ActionInvoked > %+v\n", subscriber)
+		if callback, ok := reflect.TypeOf(subscriber).MethodByName("ActionInvoked"); ok {
+			log.Printf("ActionInvoked method found > %+v\n", callback)
+			subscriber.ActionInvoked(notificationId, actionKey)
+		}
 	}
 	return nil
 }

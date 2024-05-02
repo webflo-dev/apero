@@ -2,7 +2,6 @@ package systray
 
 import (
 	"log"
-	"webflo-dev/apero/logger"
 	"webflo-dev/apero/services/systray/notifier"
 	"webflo-dev/apero/services/systray/watcher"
 
@@ -34,7 +33,7 @@ func NewSystrayService() *systray {
 
 	err := conn.ExportAll(struct{}{}, hostPath, "org.kde.StatusNotifierHost")
 	if err != nil {
-		logger.AppLogger.Println("Err", err)
+		logger.Println("Err", err)
 		return t
 	}
 
@@ -75,14 +74,14 @@ func NewSystrayService() *systray {
 
 	hostErr := t.RegisterStatusNotifierHost(conn.Names()[0], "")
 	if hostErr != nil {
-		logger.AppLogger.Println("Failed to register our host with the notifier watcher, maybe no watcher running?", hostErr)
+		logger.Println("Failed to register our host with the notifier watcher, maybe no watcher running?", hostErr)
 		return t
 	}
 
 	watchErr := t.conn.AddMatchSignal(dbus.WithMatchInterface("org.freedesktop.DBus"), dbus.WithMatchObjectPath("/org/freedesktop/DBus"))
 	_ = t.conn.AddMatchSignal(dbus.WithMatchInterface("org.kde.StatusNotifierItem"))
 	if watchErr != nil {
-		logger.AppLogger.Println("Failed to monitor systray name loss", watchErr)
+		logger.Println("Failed to monitor systray name loss", watchErr)
 		return t
 	}
 
@@ -97,18 +96,18 @@ func NewSystrayService() *systray {
 				newOwner := v.Body[2]
 				if newOwner == "" {
 					if item, ok := t.nodes[dbus.Sender(name.(string))]; ok {
-						logger.AppLogger.Println("Remove item", item)
+						logger.Println("Remove item", item)
 						// remove the item
 					}
 				}
 			case "org.kde.StatusNotifierItem.NewIcon":
 				item, ok := t.nodes[dbus.Sender(v.Sender)]
 				if ok {
-					logger.AppLogger.Println("Update icon of item", item)
+					logger.Println("Update icon of item", item)
 					// update icon of the item
 				}
 			default:
-				logger.AppLogger.Println("Also", v.Name)
+				logger.Println("Also", v.Name)
 				continue
 			}
 		}
@@ -118,14 +117,14 @@ func NewSystrayService() *systray {
 }
 
 func (t *systray) RegisterStatusNotifierHost(service string, sender dbus.Sender) (err *dbus.Error) {
-	logger.AppLogger.Println("Register Host", service, sender)
+	logger.Println("Register Host", service, sender)
 
 	e := watcher.Emit(t.conn, &watcher.StatusNotifierWatcher_StatusNotifierHostRegisteredSignal{
 		Path: dbus.ObjectPath(service),
 		Body: &watcher.StatusNotifierWatcher_StatusNotifierHostRegisteredSignalBody{},
 	})
 	if e != nil {
-		logger.AppLogger.Println("it was not emit the notification ", err)
+		logger.Println("it was not emit the notification ", err)
 	}
 	return nil
 }

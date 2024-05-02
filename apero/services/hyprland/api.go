@@ -3,7 +3,7 @@ package hyprland
 import (
 	"fmt"
 	"log"
-	"webflo-dev/apero/logger"
+	"reflect"
 )
 
 func (service *hyprlandEventService) listen() {
@@ -15,12 +15,12 @@ func (service *hyprlandEventService) listen() {
 		service.createEventsConnection()
 		defer service.closeConnection()
 
-		logger.AppLogger.Println("listening for hyprland events")
+		logger.Println("listening for hyprland events")
 
 		for {
 			msg, err := service.readEvent()
 			if err != nil {
-				logger.AppLogger.Println("Error receiving message", err)
+				logger.Println("Error receiving message", err)
 				return
 			}
 
@@ -53,13 +53,18 @@ func ActiveClient() Client {
 	return hyprlCtl.activeClient
 }
 
-func WatchEvents(handler HyprlandEventHandler, events ...EventType) {
+func WatchEvents[T any](handler T, events ...EventType) {
 	if eventService.listening == false {
 		eventService.listen()
 	}
 
 	for _, eventType := range events {
-		eventService.subscribers[eventType] = append(eventService.subscribers[eventType], handler)
+
+		if implementsMethod(handler, eventMap[eventType].methodName) == true {
+			eventService.subscribers[eventType] = append(eventService.subscribers[eventType], handler)
+		} else {
+			logger.Printf("%v does not implement %s\n", reflect.TypeOf(handler), eventMap[eventType].methodName)
+		}
 	}
 }
 
@@ -98,4 +103,34 @@ type HyprlandEventHandler interface {
 	LockGroups(lockingGroups bool)
 	ConfigReloaded()
 	Pin(windowAddress string, pinned bool)
+}
+
+func implementsMethod[T any](obj T, methodName string) bool {
+
+	objType := reflect.TypeOf(obj)
+
+	// Check if MyStruct implements the method with the given name
+	for i := 0; i < objType.NumMethod(); i++ {
+		method := objType.Method(i)
+		if method.Name == methodName {
+			return true
+		}
+	}
+
+	// Check if MyStruct embeds a type that implements the method with the given name
+	if objType.Kind() == reflect.Struct {
+		for i := 0; i < objType.NumField(); i++ {
+			field := objType.Field(i)
+			if field.Anonymous {
+				for j := 0; j < field.Type.NumMethod(); j++ {
+					method := field.Type.Method(j)
+					if method.Name == methodName {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }

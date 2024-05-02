@@ -47,7 +47,6 @@ const (
 type category string
 
 const (
-	categoryNone                category = ""
 	categoryDevice              category = "device"
 	categoryDeviceAdded         category = "device.added"
 	categoryDeviceError         category = "device.error"
@@ -90,6 +89,12 @@ func newNotification(id uint32, appName string, appIcon string, summary string, 
 
 	return
 }
+
+// func (n Notification) InvokeAction(actionKey string) {
+// 	if action, ok := n.actions[actionKey]; ok {
+// 		server.InvokeAction(n.id, action)
+// 	}
+// }
 
 func getActions(rawActions []string) actions {
 	pair := make(actions)

@@ -11,7 +11,7 @@ import (
 )
 
 type workspacesHandler struct {
-	hyprland.HyprlandEventHandler
+	// hyprland.HyprlandEventHandler
 	workspaces map[int]*gtk.Button
 }
 
@@ -35,7 +35,7 @@ func newWorkspacesModule() *gtk.Box {
 	}
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
-	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent)
+	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent, hyprland.EventActiveWindowv2)
 
 	return box
 }
@@ -53,6 +53,9 @@ func newWorkspace(id int) *gtk.Button {
 
 	return button
 }
+
+// func (handler *workspacesHandler) ActiveWindowV2(windowAddress string) {
+// }
 
 func (handler *workspacesHandler) WorkspaceV2(activeId int, name string) {
 	glib.IdleAdd(func() {

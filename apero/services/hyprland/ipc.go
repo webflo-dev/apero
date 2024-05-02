@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"webflo-dev/apero/logger"
 )
 
 const (
@@ -25,14 +24,14 @@ type hyprlandIpcService struct {
 func (service *hyprlandIpcService) createEventsConnection() {
 	connection, err := net.Dial("unix", eventSocketPath)
 	if err != nil {
-		logger.AppLogger.Fatalln("Cannot connect to Hyprland service (.socket2.sock)")
+		logger.Fatalln("Cannot connect to Hyprland service (.socket2.sock)")
 	}
 	service.connection = connection
 }
 
 func (service *hyprlandIpcService) closeConnection() {
 	if err := service.connection.Close(); err != nil {
-		logger.AppLogger.Println("Could not close connection", err)
+		logger.Println("Could not close connection", err)
 	}
 }
 
@@ -69,7 +68,7 @@ func (service *hyprlandIpcService) readEvent() ([]EventData, error) {
 func writeCmd(command string, target any) error {
 	connection, err := net.Dial("unix", writableSocketPath)
 	if err != nil {
-		logger.AppLogger.Fatalln("Cannot connect to Hyprland service (.socket.sock)")
+		logger.Fatalln("Cannot connect to Hyprland service (.socket.sock)")
 	}
 
 	message := []byte(command)

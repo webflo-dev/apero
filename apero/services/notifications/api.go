@@ -9,6 +9,7 @@ type NotificationsEventHandler interface {
 	NotificationRemoved(id uint32)
 	NotificationsCleared()
 	DoNotDisturbChanged(enabled bool)
+	ActionInvoked(notificationId uint32, actionKey string)
 }
 
 func GetServerCapabilities() []string {
@@ -20,7 +21,7 @@ func GetServerInformation() (string, string, string, string) {
 
 func WatchNotifications(handler NotificationsEventHandler) error {
 	if server.started == false {
-		Logger.Println("notifications server is not started")
+		logger.Println("notifications server is not started")
 		return errors.New("notifications server is not started")
 	}
 
@@ -79,6 +80,10 @@ func DoNotDisturb() bool {
 	return server.doNotDisturb
 }
 
-func InvokeAction(notificationId uint32, actionKey string) {
+func Notify(appName string, replacesId uint32, appIcon string, summary string, body string, actions []string, hints hints, expireTimeout int) uint32 {
+	return server.Notify(appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout)
+}
 
+func InvokeAction(notificationId uint32, actionKey string) {
+	server.InvokeAction(notificationId, actionKey)
 }

@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"webflo-dev/apero/logger"
+	"webflo-dev/apero/utils"
 )
 
-var Logger = logger.NewLogger("service:notifications")
+var logger = utils.NewLogger("service:notifications")

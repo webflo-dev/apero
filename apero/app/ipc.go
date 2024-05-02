@@ -4,12 +4,14 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"webflo-dev/apero/logger"
+	"webflo-dev/apero/utils"
 )
 
 const (
 	SocketPath = "/tmp/apero.sock"
 )
+
+var ipcLogger = utils.NewLogger("ipc")
 
 func startIPC() {
 	aperoCtl := new(AperoCtl)
@@ -19,7 +21,7 @@ func startIPC() {
 
 	listener, err := net.Listen("unix", SocketPath)
 	if err != nil {
-		logger.IpcLogger.Fatalf("Unable to listen at %s. %w", SocketPath, err)
+		ipcLogger.Fatalf("Unable to listen at %s. %v", SocketPath, err)
 	}
 
 	go rpc.Accept(listener)
@@ -36,13 +38,13 @@ type EmptyArgs struct{}
 type AperoCtl int
 
 func (a *AperoCtl) Quit(args *EmptyArgs, reply *int) error {
-	logger.IpcLogger.Println("Quit")
+	ipcLogger.Println("Quit")
 	os.Exit(0)
 	return nil
 }
 
 func (a *AperoCtl) ApplyCSS(args *EmptyArgs, reply *int) error {
-	logger.IpcLogger.Println("ApplyCSS")
+	ipcLogger.Println("ApplyCSS")
 	ApplyCSS("")
 	return nil
 }
