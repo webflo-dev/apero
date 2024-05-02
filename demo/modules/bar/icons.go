@@ -18,4 +18,7 @@ const (
 	Icon_Workspace_3       = "__workspace-3-symbolic"
 	Icon_Workspace_4       = "__workspace-4-symbolic"
 	Icon_Workspace_5       = "__workspace-5-symbolic"
+
+	Icon_NotificationIndicator     = "__notification-indicator-symbolic"
+	Icon_NotificationIndicator_DND = "__notification-indicator-dnd-symbolic"
 )

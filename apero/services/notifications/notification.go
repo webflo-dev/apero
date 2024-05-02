@@ -1,25 +1,42 @@
 package notifications
 
 import (
-	"errors"
+	"log"
 	"os"
 	"reflect"
+	"time"
 )
 
 type hints map[string]any
+type actions map[string]string
 
-type notification struct {
-	id        int
-	appName   string
-	appIcon   string
-	summary   string
-	body      string
-	actions   []string
-	hints     hints
-	timestamp int64
+type Notification struct {
+	id           uint32
+	appName      string
+	appIcon      string
+	summary      string
+	body         string
+	actions      actions
+	hints        hints
+	timestamp    int64
+	urgency      urgency
+	resident     bool
+	desktopEntry string
+	category     category
+	imagePath    string
 }
 
-type urgency uint
+type imageData struct {
+	width         int32
+	height        int32
+	rowStride     int32
+	hasAlpha      bool
+	bitsPerSample int32
+	channels      int32
+	data          []byte
+}
+
+type urgency uint16
 
 const (
 	urgencyLow      urgency = 0
@@ -53,89 +70,168 @@ const (
 	categoryTransferError       category = "transfer.error"
 )
 
-func (n notification) urgency() urgency {
-	value := n.hints["urgency"]
+func newNotification(id uint32, appName string, appIcon string, summary string, body string, actions []string, hints hints) (n Notification) {
+	n = Notification{
+		id:        id,
+		appName:   appName,
+		appIcon:   appIcon,
+		summary:   summary,
+		body:      body,
+		hints:     hints,
+		timestamp: time.Now().Unix(),
+		urgency:   hints.urgency(),
+		resident:  hints.resident(),
+	}
+
+	n.actions = getActions(actions)
+	n.desktopEntry, _ = hints.desktopEntry()
+	n.category, _ = hints.category()
+	n.imagePath = getImagePath(n)
+
+	return
+}
+
+func getActions(rawActions []string) actions {
+	pair := make(actions)
+	for i := 0; i < len(rawActions); i += 2 {
+		if rawActions[i+1] == "" {
+			pair[rawActions[i]] = rawActions[i+1]
+		}
+	}
+	return pair
+}
+
+func getImagePath(n Notification) string {
+	if n.appIcon != "" {
+		return ""
+	}
+
+	if _, err := os.Stat(n.appIcon); err == nil {
+		return n.appIcon
+	} else {
+		imageData, ok := n.hints.imageData()
+		if ok {
+			out, err := os.CreateTemp("", "apero-notification-*")
+			if err != nil {
+				log.Println("error creating temp file", err)
+				return ""
+			}
+			_, err = out.Write(imageData.data)
+			defer out.Close()
+			return out.Name()
+		} else {
+			return n.hints.imagePath()
+		}
+	}
+}
+
+func (h hints) urgency() urgency {
+	value := h["urgency"]
 	if value == nil {
 		return urgencyNormal
 	}
 	return urgency(reflect.ValueOf(value).Uint())
 }
 
-func (n notification) resident() bool {
-	value := n.hints["resident"]
+func (h hints) resident() bool {
+	value := h["resident"]
 	if value == nil {
 		return false
 	}
 	return reflect.ValueOf(value).Bool()
 }
 
-func (n notification) senderPID() (uint64, bool) {
-	value := n.hints["sender-pid"]
+func (h hints) desktopEntry() (string, bool) {
+	value := h["desktop-entry"]
 	if value == nil {
-		return 0, false
+		return "", false
 	}
-	return reflect.ValueOf(value).Uint(), true
+	return reflect.ValueOf(value).String(), true
 }
 
-func (n notification) category() (category, bool) {
-	value := n.hints["category"]
+func (h hints) category() (category, bool) {
+	value := h["category"]
 	if value == nil {
 		return "", false
 	}
 	return category(reflect.ValueOf(value).String()), true
 }
 
-func (n notification) actionIcons() bool {
-	value := n.hints["action-icons"]
+func (h hints) senderPID() (uint64, bool) {
+	value := h["sender-pid"]
+	if value == nil {
+		return 0, false
+	}
+	return reflect.ValueOf(value).Uint(), true
+}
+
+func (h hints) actionIcons() bool {
+	value := h["action-icons"]
 	if value == nil {
 		return false
 	}
 	return reflect.ValueOf(value).Bool()
 }
 
-func (n notification) desktopEntry() (string, bool) {
-	value := n.hints["desktop-entry"]
-	if value == nil {
-		return "", false
-	}
-	return reflect.ValueOf(value).String(), true
-}
-
-func (n notification) transient() bool {
-	value := n.hints["transient"]
+func (h hints) transient() bool {
+	value := h["transient"]
 	if value == nil {
 		return false
 	}
 	return reflect.ValueOf(value).Bool()
 }
 
-func (n notification) x() (int32, bool) {
-	value := n.hints["x"]
+func (h hints) x() (int32, bool) {
+	value := h["x"]
 	if value == nil {
 		return 0, false
 	}
 	return int32(reflect.ValueOf(value).Int()), true
 }
 
-func (n notification) y() (int32, bool) {
-	value := n.hints["y"]
+func (h hints) y() (int32, bool) {
+	value := h["y"]
 	if value == nil {
 		return 0, false
 	}
 	return int32(reflect.ValueOf(value).Int()), true
 }
 
-func (n notification) image() (string, bool) {
-	if n.appIcon != "" {
-		if _, err := os.Stat(n.appIcon); errors.Is(err, os.ErrNotExist) {
-			return n.appIcon, false
-		}
-		return n.appIcon, true
+func (h hints) imagePath() string {
+	value := h["image-path"]
+	if value == nil {
+		return ""
+	}
+	return reflect.ValueOf(value).String()
+}
+
+func (h hints) imageData() (imageData, bool) {
+	value := h["image-data"]
+	imageData := imageData{}
+	if value == nil {
+		return imageData, false
+	}
+	values := reflect.ValueOf(value).Interface().([]any)
+	imageData.width = values[0].(int32)
+	imageData.height = values[1].(int32)
+	imageData.rowStride = values[2].(int32)
+	imageData.hasAlpha = values[3].(bool)
+	imageData.bitsPerSample = values[4].(int32)
+	imageData.channels = values[5].(int32)
+	imageData.data = values[6].([]byte)
+
+	// bits_per_sample (i): Must always be 8
+	if imageData.bitsPerSample != 8 {
+		return imageData, false
 	}
 
-	value := n.hints["image-path"]
-	if value == nil {
-		return "", false
+	// channels (i): If has_alpha is TRUE, must be 4, otherwise 3
+	if imageData.hasAlpha && imageData.channels == 4 {
+		return imageData, true
 	}
-	return reflect.ValueOf(value).String(), true
+	if imageData.channels != 3 {
+		return imageData, false
+	}
+
+	return imageData, true
 }

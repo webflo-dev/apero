@@ -1,5 +1,8 @@
+github.com/TheCreeper/go-notify v0.2.0 h1:akzlSD8IWx+uOZqGNwS0FYsThYuw11JkXsYiQXY5kgo=
+github.com/TheCreeper/go-notify v0.2.0/go.mod h1:paZnY8fMbaOyZLQWJitGWAMrO5ot3Ow7id47cyEL1KA=
 github.com/dlasky/gotk3-layershell v0.0.0-20230802002603-b0c42cd8474f h1:qDnUQAD7tVX/gnL6uSgouzfGNA4xXH+B/fd6Ko19GgM=
 github.com/dlasky/gotk3-layershell v0.0.0-20230802002603-b0c42cd8474f/go.mod h1:JHLx2Wz4mAPVwn4PFhC69ydwyHP4A3wQvlg7HKVVc1U=
+github.com/godbus/dbus/v5 v5.0.3/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
 github.com/godbus/dbus/v5 v5.1.0/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gotk3/gotk3 v0.6.1/go.mod h1:/hqFpkNa9T3JgNAE2fLvCdov7c5bw//FHNZrZ3Uv9/Q=

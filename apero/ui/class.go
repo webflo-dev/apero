@@ -11,6 +11,7 @@ func RemoveCSSClass(widget *gtk.Widget, className string) {
 	ctx, _ := widget.GetStyleContext()
 	ctx.RemoveClass(className)
 }
+
 func HasCSSClass(widget *gtk.Widget, className string) bool {
 	ctx, _ := widget.GetStyleContext()
 	return ctx.HasClass(className)
