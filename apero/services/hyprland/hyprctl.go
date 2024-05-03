@@ -1,7 +1,5 @@
 package hyprland
 
-import "fmt"
-
 type hyprlandCtlService struct {
 	workspaces      []Workspace
 	activeWorkspace Workspace
@@ -16,11 +14,6 @@ func newHyprlandCtlService() *hyprlandCtlService {
 	service.syncWorkspaces()
 	service.syncClients()
 	return service
-}
-
-func (service *hyprlandCtlService) preprocessClientAddress(rawValues []string) []string {
-	rawValues[0] = fmt.Sprintf("0x%s", rawValues[0])
-	return rawValues
 }
 
 func (service *hyprlandCtlService) syncWorkspaces() {

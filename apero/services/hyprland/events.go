@@ -1,55 +1,144 @@
 package hyprland
 
 import (
+	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
 type hyprlandEventService struct {
 	hyprlandIpcService
-	listening bool
-	// subscribers map[EventType][]HyprlandEventHandler
+	listening   bool
 	subscribers map[EventType][]any
-}
-
-type SyncMethod func()
-type PreProcessor func([]string) []string
-
-type ProcessMap struct {
-	methodName   string
-	preprocessor []PreProcessor
-	syncMethods  []SyncMethod
 }
 
 var eventService = newHyprlandEventService()
 
 func newHyprlandEventService() *hyprlandEventService {
 	service := &hyprlandEventService{
-		listening: false,
-		// subscribers: make(map[EventType][]HyprlandEventHandler),
+		listening:   false,
 		subscribers: make(map[EventType][]any),
 	}
 
 	return service
 }
 
+func preprocessClientAddress(values []string) []string {
+	values[0] = fmt.Sprintf("0x%s", values[0])
+	return values
+}
+
 func (s *hyprlandEventService) processEvent(msg EventData) {
-	eventData := eventMap[msg.Type]
+	values := strings.Split(msg.Data, ",")
 
-	rawValues := strings.Split(msg.Data, ",")
-	if eventData.preprocessor != nil {
-		for _, preprocessor := range eventData.preprocessor {
-			rawValues = preprocessor(rawValues)
-		}
+	switch msg.Type {
+	case EventWorkspace:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventWorkspacev2:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventFocusedMonitor:
+		break
+	case EventActiveWindow:
+		preprocessClientAddress(values)
+		hyprlCtl.syncActiveClient()
+		break
+	case EventActiveWindowv2:
+		preprocessClientAddress(values)
+		hyprlCtl.syncActiveClient()
+		break
+	case EventFullscreen:
+		hyprlCtl.syncWorkspaces()
+		hyprlCtl.syncClients()
+		break
+	case EventMonitorRemoved:
+		break
+	case EventMonitorAdded:
+		break
+	case EventMonitorAddedv2:
+		break
+	case EventCreateWorkspace:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventCreateWorkspacev2:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventDestroyWorkspace:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventDestroyWorkspacev2:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventMoveWorkspace:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventMoveWorkspacev2:
+		hyprlCtl.syncWorkspaces()
+		break
+	case EventRenameWorkspace:
+		break
+	case EventActiveSpecial:
+		break
+	case EventActiveLayout:
+		break
+	case EventOpenWindow:
+		preprocessClientAddress(values)
+		hyprlCtl.syncWorkspaces()
+		hyprlCtl.syncClients()
+		break
+	case EventCloseWindow:
+		preprocessClientAddress(values)
+		hyprlCtl.syncWorkspaces()
+		hyprlCtl.syncClients()
+		break
+	case EventMoveWindow:
+		preprocessClientAddress(values)
+		hyprlCtl.syncWorkspaces()
+		hyprlCtl.syncClients()
+		break
+	case EventMoveWindowv2:
+		preprocessClientAddress(values)
+		hyprlCtl.syncWorkspaces()
+		hyprlCtl.syncClients()
+		break
+	case EventOpenLayer:
+		break
+	case EventCloseLayer:
+		break
+	case EventSubMap:
+		break
+	case EventChangeFloatingMode:
+		preprocessClientAddress(values)
+		hyprlCtl.syncClients()
+		break
+	case EventUrgent:
+		preprocessClientAddress(values)
+		break
+	case EventMinimize:
+		preprocessClientAddress(values)
+		break
+	case EventScreencast:
+		break
+	case EventWindowTitle:
+		preprocessClientAddress(values)
+		hyprlCtl.syncClients()
+		break
+	case EventIgnoreGroupLock:
+		break
+	case EventLockGroups:
+		break
+	case EventConfigReloaded:
+		break
+	case EventPin:
+		preprocessClientAddress(values)
+		hyprlCtl.syncClients()
+		break
 	}
 
-	if eventData.syncMethods != nil {
-		for _, syncMethod := range eventData.syncMethods {
-			syncMethod()
-		}
-	}
-	for _, subscriber := range s.subscribers[msg.Type] {
-		callHandler(subscriber, eventData.methodName, rawValues)
-	}
+	eventMethod := eventMethods[msg.Type]
+	eventMethod.call(msg.Type, values)
 }
 
 type EventType string
@@ -57,6 +146,43 @@ type EventType string
 type EventData struct {
 	Type EventType
 	Data string
+}
+
+type HyprlandEventHandler interface {
+	Workspace(workspaceName string)
+	WorkspaceV2(workspaceId int, workspaceName string)
+	FocusedMonitor(monitorName string, workspaceName string)
+	ActiveWindow(windowClass string, windowTitle string)
+	ActiveWindowV2(windowAddress string)
+	Fullscreen(fullscreen bool)
+	MonitorRemoved(monitorName string)
+	MonitorAdded(monitorName string)
+	MonitorAddedV2(monitorId int, monitorName string, monitorDescription string)
+	CreateWorkspace(workspaceName string)
+	CreateWorkspaceV2(workspaceId int, workspaceName string)
+	DestroyWorkspace(workspaceName string)
+	DestroyWorkspaceV2(workspaceId int, workspaceName string)
+	MoveWorkspace(workspaceName string, monitorName string)
+	MoveWorkspaceV2(workspaceId int, workspaceName string, monitorName string)
+	RenameWorkspace(workspaceId int, newWorkspaceName string)
+	ActiveSpecial(workspaceName string, monitorName string)
+	ActiveLayout(keyboardName string, layoutName string)
+	OpenWindow(windowAddress string, workspaceName string, windowClass string, windowTitle string)
+	CloseWindow(windowAddress string)
+	MoveWindow(windowAddress string, workspaceName string)
+	MoveWindowV2(windowAddress string, workspaceId int, workspaceName string)
+	OpenLayer(namespace string)
+	CloseLayer(namespace string)
+	SubMap(submapName string)
+	ChangeFloatingMode(windowAddress string, floating bool)
+	Urgent(windowAddress string)
+	Minimize(windowAddress string, minimized bool)
+	Screencast(screencasting bool, shareWindow bool)
+	WindowTitle(windowAddress string)
+	IgnoreGroupLock(ignoringGrouplock bool)
+	LockGroups(lockingGroups bool)
+	ConfigReloaded()
+	Pin(windowAddress string, pinned bool)
 }
 
 const (
@@ -89,108 +215,77 @@ const (
 	EventUrgent             EventType = "urgent"
 	EventMinimize           EventType = "minimize"
 	EventScreencast         EventType = "screencast"
-	EventWindowtitle        EventType = "windowtitle"
+	EventWindowTitle        EventType = "windowtitle"
 	EventIgnoreGroupLock    EventType = "ignoregrouplock"
 	EventLockGroups         EventType = "lockgroups"
-	EventConfigreloaded     EventType = "configreloaded"
+	EventConfigReloaded     EventType = "configreloaded"
 	EventPin                EventType = "pin"
 )
 
-var eventMap = map[EventType]ProcessMap{
-	// EventWorkspace:          {"Workspace", nil, nil},
+var eventMethods = newEventMethods()
 
-	EventWorkspacev2: {"WorkspaceV2",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+func newEventMethods() map[EventType]*eventMethod {
+	iface := reflect.TypeOf(struct{ HyprlandEventHandler }{})
+	lenMethods := iface.NumMethod()
 
-	EventFocusedMonitor: {"FocusedMonitor", nil, nil},
+	eventMethods := make(map[EventType]*eventMethod, lenMethods)
 
-	// EventActiveWindow:       {"ActiveWindow", nil, nil},
+	for i := 0; i < lenMethods; i++ {
+		method := iface.Method(i)
+		lenParams := method.Type.NumIn()
 
-	EventActiveWindowv2: {"ActiveWindowV2",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncActiveClient}},
+		eventMethod := &eventMethod{
+			name:   method.Name,
+			values: make([]valueConvertor, lenParams-1),
+		}
 
-	EventFullscreen: {"Fullscreen",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
+		for j := 1; j < lenParams; j++ {
+			t := method.Type.In(j)
+			switch t.Kind() {
+			case reflect.Int:
+				eventMethod.values[j-1] = toInt
+				break
+			case reflect.Bool:
+				eventMethod.values[j-1] = toBool
+				break
+			default:
+				eventMethod.values[j-1] = toString
+				break
+			}
+		}
+		eventMethods[EventType(strings.ToLower(method.Name))] = eventMethod
+	}
+	return eventMethods
+}
 
-	EventMonitorRemoved: {"MonitorRemoved", nil, nil},
+func (m *eventMethod) call(eventType EventType, values []string) {
+	in := make([]reflect.Value, len(m.values)+1)
+	for i, value := range values {
+		in[i+1] = m.values[i](value)
+	}
 
-	// EventMonitorAdded:   {"MonitorAdded", nil, nil},
+	for _, subscriber := range eventSubscribers[eventType] {
+		in[0] = reflect.ValueOf(subscriber.handle)
+		subscriber.callback.Call(in)
+	}
+}
 
-	EventMonitorAddedv2: {"MonitorAddedV2", nil, nil},
+type eventMethod struct {
+	name   string
+	values []valueConvertor
+}
 
-	// EventCreateWorkspace:    {"CreateWorkspace", nil, nil},
+type valueConvertor = func(value string) reflect.Value
 
-	EventCreateWorkspacev2: {"CreateWorkspaceV2",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces}},
+func toInt(value string) reflect.Value {
+	intValue, _ := strconv.Atoi(value)
+	return reflect.ValueOf(intValue)
+}
 
-	// EventDestroyWorkspace:   {"DestroyWorkspace", nil, nil},
+func toBool(value string) reflect.Value {
+	return reflect.ValueOf(value == "1")
+}
 
-	EventDestroyWorkspacev2: {"DestroyWorkspaceV2",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces}},
-
-	// EventMoveWorkspace:      {"MoveWorkspace", nil, []SyncMethod{hyprlCtl.syncWorkspaces}},
-
-	EventMoveWorkspacev2: {"MoveWorkspaceV2",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces}},
-
-	EventRenameWorkspace: {"RenameWorkspace",
-		nil,
-		[]SyncMethod{hyprlCtl.syncWorkspaces}},
-
-	EventActiveSpecial: {"ActiveSepcial", nil, nil},
-
-	EventActiveLayout: {"ActiveLayout", nil, nil},
-
-	EventOpenWindow: {"OpenWindow",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
-
-	EventCloseWindow: {"CloseWindow",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
-	// EventMoveWindow:         {"MoveWindow", nil, nil},
-
-	EventMoveWindowv2: {"MoveWindowV2",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncWorkspaces, hyprlCtl.syncClients}},
-
-	EventOpenLayer: {"OpenLayer", nil, nil},
-
-	EventCloseLayer: {"CloseLayer", nil, nil},
-
-	EventSubMap: {"SubMap", nil, nil},
-
-	EventChangeFloatingMode: {"ChangeFloatingMode",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncClients}},
-
-	EventUrgent: {"Urgent",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		nil},
-
-	EventMinimize: {"Minimize",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		nil},
-
-	EventScreencast: {"Screencast", nil, nil},
-
-	EventWindowtitle: {"WindowTitle",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncClients}},
-
-	EventIgnoreGroupLock: {"IgnoreGrouplock", nil, nil},
-
-	EventLockGroups: {"LockGroups", nil, nil},
-
-	EventConfigreloaded: {"ConfigReloaded", nil, nil},
-
-	EventPin: {"Pin",
-		[]PreProcessor{hyprlCtl.preprocessClientAddress},
-		[]SyncMethod{hyprlCtl.syncClients}},
+func toString(value string) reflect.Value {
+	return reflect.ValueOf(value)
 }

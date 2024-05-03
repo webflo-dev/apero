@@ -11,7 +11,6 @@ import (
 )
 
 type workspacesHandler struct {
-	// hyprland.HyprlandEventHandler
 	workspaces map[int]*gtk.Button
 }
 
@@ -35,7 +34,7 @@ func newWorkspacesModule() *gtk.Box {
 	}
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
-	hyprland.WatchEvents(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent, hyprland.EventActiveWindowv2)
+	hyprland.RegisterForEvents(handler)
 
 	return box
 }
@@ -57,14 +56,14 @@ func newWorkspace(id int) *gtk.Button {
 // func (handler *workspacesHandler) ActiveWindowV2(windowAddress string) {
 // }
 
-func (handler *workspacesHandler) WorkspaceV2(activeId int, name string) {
+func (handler *workspacesHandler) WorkspaceV2(workspaceId int, name string) {
 	glib.IdleAdd(func() {
 
 		workspacesFromHyprland := hyprland.Workspaces()
 		for id, workspace := range handler.workspaces {
-			ui.ToggleCSSClassFromBool(&workspace.Widget, "active", id == activeId)
+			ui.ToggleCSSClassFromBool(&workspace.Widget, "active", id == workspaceId)
 
-			if id == activeId {
+			if id == workspaceId {
 				if ui.HasCSSClass(&workspace.Widget, "urgent") {
 					ui.RemoveCSSClass(&workspace.Widget, "urgent")
 				}

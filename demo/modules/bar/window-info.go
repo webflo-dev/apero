@@ -8,7 +8,6 @@ import (
 )
 
 type windowStateHandler struct {
-	hyprland.HyprlandEventHandler
 	box        *gtk.Box
 	pinned     *gtk.Button
 	fullscreen *gtk.Button
@@ -33,12 +32,7 @@ func newWindowInfoModule() *gtk.Box {
 		fullscreen: fullscreen,
 		floating:   floating,
 	}
-	hyprland.WatchEvents(handler,
-		hyprland.EventActiveWindowv2,
-		hyprland.EventFullscreen,
-		hyprland.EventChangeFloatingMode,
-		hyprland.EventPin,
-	)
+	hyprland.RegisterForEvents(handler)
 
 	return box
 }
