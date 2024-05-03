@@ -7,7 +7,6 @@ import (
 	systemStats "webflo-dev/apero/services/system-stats"
 	"webflo-dev/apero/ui"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -17,8 +16,7 @@ type systemInfo struct {
 	icon  *gtk.Image
 }
 
-type systemStatsHandler struct {
-	systemStats.SystemStatsEventHandler
+type statsHandler struct {
 	cpu    *systemInfo
 	memory *systemInfo
 	nvidia *systemInfo
@@ -38,7 +36,7 @@ func newSystemInfoModule() *gtk.Box {
 	nvidia := newSystemInfoBox(Icon_SystemStats_Gpu)
 	box.Add(nvidia.box)
 
-	systemStats.WatchSystemStats(&systemStatsHandler{
+	systemStats.RegisterForEvents(&statsHandler{
 		cpu:    cpu,
 		memory: memory,
 		nvidia: nvidia,
@@ -47,12 +45,10 @@ func newSystemInfoModule() *gtk.Box {
 	return box
 }
 
-func (handler *systemStatsHandler) Notify(value *systemStats.SystemStats) {
-	glib.IdleAdd(func() {
-		handler.cpu.SetValue(value.Cpu.Usage)
-		handler.memory.SetValue(int(math.Floor((float64(value.Memory.Used) / float64(value.Memory.Total)) * 100)))
-		handler.nvidia.SetValue(value.Nvidia.GpuUsage)
-	})
+func (h *statsHandler) UpdateAll(stats *systemStats.SystemStats) {
+	h.cpu.SetValue(stats.Cpu.Usage)
+	h.memory.SetValue(int(math.Floor((float64(stats.Memory.Used) / float64(stats.Memory.Total)) * 100)))
+	h.nvidia.SetValue(stats.Nvidia.GpuUsage)
 }
 
 func newSystemInfoBox(iconName string) *systemInfo {

@@ -1,6 +1,8 @@
 package app
 
 import (
+	sysStat "webflo-dev/apero/services/system-stats"
+
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -50,6 +52,8 @@ func activate(application *gtk.Application, useInspector bool, windowsLoader fun
 	appLogger.Println("loading CSS from " + appConfig.CssFile)
 	ApplyCSS(appConfig.CssFile)
 	appLogger.Println("CSS loaded!")
+
+	sysStat.StartService()
 
 	if windowsLoader != nil {
 		windowsLoader()
