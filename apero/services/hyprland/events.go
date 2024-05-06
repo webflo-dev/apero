@@ -11,20 +11,34 @@ func (s *service) processEvent(msg EventData) {
 
 	switch msg.Type {
 	case EventWorkspace:
-		s.syncWorkspaces()
+		// s.syncWorkspaces()
 		for _, subscriber := range s.subscribers[EventWorkspace] {
 			subscriber.Workspace(values[0])
 		}
 		break
 	case EventWorkspacev2:
-		s.syncWorkspaces()
+		// s.syncWorkspaces()
 		for _, subscriber := range s.subscribers[EventWorkspacev2] {
 			subscriber.WorkspaceV2(toInt(values[0]), values[1])
 		}
 		break
 	case EventFocusedMonitor:
+		monitorName := values[0]
+		workspaceName := values[1]
+		for _, monitor := range s.monitors {
+			if monitor.Name == monitorName {
+				s.activeMonitor = monitor
+				break
+			}
+		}
+		for _, workspace := range s.workspaces {
+			if workspace.Name == workspaceName {
+				s.activeWorkspace = workspace
+				break
+			}
+		}
 		for _, subscriber := range s.subscribers[EventFocusedMonitor] {
-			subscriber.FocusedMonitor(values[0], values[1])
+			subscriber.FocusedMonitor(monitorName, workspaceName)
 		}
 		break
 	case EventActiveWindow:
@@ -47,16 +61,19 @@ func (s *service) processEvent(msg EventData) {
 		}
 		break
 	case EventMonitorRemoved:
+		s.syncMonitors()
 		for _, subscriber := range s.subscribers[EventMonitorRemoved] {
 			subscriber.MonitorRemoved(values[0])
 		}
 		break
 	case EventMonitorAdded:
+		s.syncMonitors()
 		for _, subscriber := range s.subscribers[EventMonitorAdded] {
 			subscriber.MonitorAdded(values[0])
 		}
 		break
 	case EventMonitorAddedv2:
+		s.syncMonitors()
 		for _, subscriber := range s.subscribers[EventMonitorAddedv2] {
 			subscriber.MonitorAddedV2(toInt(values[0]), values[1], values[2])
 		}
