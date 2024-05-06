@@ -11,6 +11,7 @@ import (
 )
 
 type workspacesHandler struct {
+	hyprland.Subscriber
 	workspaces map[int]*gtk.Button
 }
 
@@ -34,7 +35,8 @@ func newWorkspacesModule() *gtk.Box {
 	}
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
-	hyprland.RegisterForEvents(handler)
+
+	hyprland.Register(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent)
 
 	return box
 }
@@ -47,14 +49,11 @@ func newWorkspace(id int) *gtk.Button {
 	ui.AddCSSClass(&button.Widget, "workspace")
 
 	button.Connect("clicked", func() {
-		hyprland.Dispatch("workspace %d", id)
+		hyprland.Dispatch("workspace", id)
 	})
 
 	return button
 }
-
-// func (handler *workspacesHandler) ActiveWindowV2(windowAddress string) {
-// }
 
 func (handler *workspacesHandler) WorkspaceV2(workspaceId int, name string) {
 	glib.IdleAdd(func() {

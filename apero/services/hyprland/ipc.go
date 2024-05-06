@@ -17,28 +17,24 @@ var hyprlandInstanceSignature = os.Getenv("HYPRLAND_INSTANCE_SIGNATURE")
 var eventSocketPath = fmt.Sprintf("/tmp/hypr/%s/.socket2.sock", hyprlandInstanceSignature)
 var writableSocketPath = fmt.Sprintf("/tmp/hypr/%s/.socket.sock", hyprlandInstanceSignature)
 
-type hyprlandIpcService struct {
-	connection net.Conn
-}
-
-func (service *hyprlandIpcService) createEventsConnection() {
+func createEventsConnection() net.Conn {
 	connection, err := net.Dial("unix", eventSocketPath)
 	if err != nil {
 		logger.Fatalln("Cannot connect to Hyprland service (.socket2.sock)")
 	}
-	service.connection = connection
+	return connection
 }
 
-func (service *hyprlandIpcService) closeConnection() {
-	if err := service.connection.Close(); err != nil {
+func closeConnection(connection net.Conn) {
+	if err := connection.Close(); err != nil {
 		logger.Println("Could not close connection", err)
 	}
 }
 
-func (service *hyprlandIpcService) readEvent() ([]EventData, error) {
+func readEvent(connection net.Conn) ([]EventData, error) {
 
 	buf := make([]byte, bufferSize)
-	n, err := service.connection.Read(buf)
+	n, err := connection.Read(buf)
 	if err != nil {
 		return nil, err
 	}

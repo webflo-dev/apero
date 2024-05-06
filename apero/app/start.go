@@ -1,6 +1,7 @@
 package app
 
 import (
+	"webflo-dev/apero/services/hyprland"
 	sysStat "webflo-dev/apero/services/system-stats"
 
 	"github.com/gotk3/gotk3/glib"
@@ -54,6 +55,7 @@ func activate(application *gtk.Application, useInspector bool, windowsLoader fun
 	appLogger.Println("CSS loaded!")
 
 	sysStat.StartService()
+	hyprland.StartService()
 
 	if windowsLoader != nil {
 		windowsLoader()

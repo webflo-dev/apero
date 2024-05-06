@@ -1,11 +1,18 @@
 {
+  "workbench.colorTheme": "Tokyo Night Moon",
+  "workbench.colorCustomizations": {
+    "[Tokyo Night Moon]": {
+      "editorSuggestWidget.selectedBackground": "#13131a",
+      "editorSuggestWidget.selectedForeground": "#c8d3f5"
+    }
+  },
+
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   },
   "[xml]": {
     "editor.defaultFormatter": "DotJoshJohnson.xml"
   },
-  "workbench.colorTheme": "Tokyo Night Moon",
   "go.alternateTools": {
     "go": "/nix/store/mzg3cka0bbr5jq96ysymwziw74fnk22m-go-1.22.1/bin/go",
     "gofmt": "/nix/store/mzg3cka0bbr5jq96ysymwziw74fnk22m-go-1.22.1/bin/gofmt",

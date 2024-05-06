@@ -1,6 +1,7 @@
 package bar
 
 import (
+	"fmt"
 	"webflo-dev/apero/services/hyprland"
 	"webflo-dev/apero/ui"
 
@@ -8,6 +9,7 @@ import (
 )
 
 type windowStateHandler struct {
+	hyprland.Subscriber
 	box        *gtk.Box
 	pinned     *gtk.Button
 	fullscreen *gtk.Button
@@ -32,7 +34,11 @@ func newWindowInfoModule() *gtk.Box {
 		fullscreen: fullscreen,
 		floating:   floating,
 	}
-	hyprland.RegisterForEvents(handler)
+	hyprland.Register(handler,
+		hyprland.EventActiveWindowv2,
+		hyprland.EventFullscreen,
+		hyprland.EventChangeFloatingMode,
+		hyprland.EventPin)
 
 	return box
 }
@@ -47,11 +53,11 @@ func newWindowInfo(iconName string, className string) *gtk.Button {
 	box.Connect("clicked", func() {
 		switch className {
 		case "pinned":
-			hyprland.Dispatch("pin address:%s", hyprland.ActiveClient().Address)
+			hyprland.Dispatch("pin", fmt.Sprintf("address:%s", hyprland.ActiveClient().Address))
 		case "fullscreen":
-			hyprland.Dispatch("fullscreen 1")
+			hyprland.Dispatch("fullscreen", 1)
 		case "floating":
-			hyprland.Dispatch("togglefloating address:%s", hyprland.ActiveClient().Address)
+			hyprland.Dispatch("togglefloating", fmt.Sprintf("address:%s", hyprland.ActiveClient().Address))
 		}
 	})
 

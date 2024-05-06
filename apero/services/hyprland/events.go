@@ -2,153 +2,217 @@ package hyprland
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 )
 
-type hyprlandEventService struct {
-	hyprlandIpcService
-	listening   bool
-	subscribers map[EventType][]any
-}
-
-var eventService = newHyprlandEventService()
-
-func newHyprlandEventService() *hyprlandEventService {
-	service := &hyprlandEventService{
-		listening:   false,
-		subscribers: make(map[EventType][]any),
-	}
-
-	return service
-}
-
-func preprocessClientAddress(values []string) []string {
-	values[0] = fmt.Sprintf("0x%s", values[0])
-	return values
-}
-
-func (s *hyprlandEventService) processEvent(msg EventData) {
+func (s *service) processEvent(msg EventData) {
 	values := strings.Split(msg.Data, ",")
 
 	switch msg.Type {
 	case EventWorkspace:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventWorkspace] {
+			subscriber.Workspace(values[0])
+		}
 		break
 	case EventWorkspacev2:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventWorkspacev2] {
+			subscriber.WorkspaceV2(toInt(values[0]), values[1])
+		}
 		break
 	case EventFocusedMonitor:
+		for _, subscriber := range s.subscribers[EventFocusedMonitor] {
+			subscriber.FocusedMonitor(values[0], values[1])
+		}
 		break
 	case EventActiveWindow:
-		preprocessClientAddress(values)
-		hyprlCtl.syncActiveClient()
+		s.syncActiveClient()
+		for _, subscriber := range s.subscribers[EventActiveWindow] {
+			subscriber.ActiveWindow(values[0], values[1])
+		}
 		break
 	case EventActiveWindowv2:
-		preprocessClientAddress(values)
-		hyprlCtl.syncActiveClient()
+		s.syncActiveClient()
+		for _, subscriber := range s.subscribers[EventActiveWindowv2] {
+			subscriber.ActiveWindowV2(toAddress(values[0]))
+		}
 		break
 	case EventFullscreen:
-		hyprlCtl.syncWorkspaces()
-		hyprlCtl.syncClients()
+		s.syncWorkspaces()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventFullscreen] {
+			subscriber.Fullscreen(toBool(values[0]))
+		}
 		break
 	case EventMonitorRemoved:
+		for _, subscriber := range s.subscribers[EventMonitorRemoved] {
+			subscriber.MonitorRemoved(values[0])
+		}
 		break
 	case EventMonitorAdded:
+		for _, subscriber := range s.subscribers[EventMonitorAdded] {
+			subscriber.MonitorAdded(values[0])
+		}
 		break
 	case EventMonitorAddedv2:
+		for _, subscriber := range s.subscribers[EventMonitorAddedv2] {
+			subscriber.MonitorAddedV2(toInt(values[0]), values[1], values[2])
+		}
 		break
 	case EventCreateWorkspace:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventCreateWorkspace] {
+			subscriber.CreateWorkspace(values[0])
+		}
 		break
 	case EventCreateWorkspacev2:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventCreateWorkspacev2] {
+			subscriber.CreateWorkspaceV2(toInt(values[0]), values[1])
+		}
 		break
 	case EventDestroyWorkspace:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventDestroyWorkspace] {
+			subscriber.DestroyWorkspace(values[0])
+		}
 		break
 	case EventDestroyWorkspacev2:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventDestroyWorkspacev2] {
+			subscriber.DestroyWorkspaceV2(toInt(values[0]), values[1])
+		}
 		break
 	case EventMoveWorkspace:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventMoveWorkspace] {
+			subscriber.MoveWorkspace(values[0], values[1])
+		}
 		break
 	case EventMoveWorkspacev2:
-		hyprlCtl.syncWorkspaces()
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventMoveWorkspacev2] {
+			subscriber.MoveWorkspaceV2(toInt(values[0]), values[1], values[2])
+		}
 		break
 	case EventRenameWorkspace:
+		s.syncWorkspaces()
+		for _, subscriber := range s.subscribers[EventRenameWorkspace] {
+			subscriber.RenameWorkspace(toInt(values[0]), values[1])
+		}
 		break
 	case EventActiveSpecial:
+		for _, subscriber := range s.subscribers[EventActiveSpecial] {
+			subscriber.ActiveSpecial(values[0], values[1])
+		}
 		break
 	case EventActiveLayout:
+		for _, subscriber := range s.subscribers[EventActiveLayout] {
+			subscriber.ActiveLayout(values[0], values[1])
+		}
 		break
 	case EventOpenWindow:
-		preprocessClientAddress(values)
-		hyprlCtl.syncWorkspaces()
-		hyprlCtl.syncClients()
+		s.syncWorkspaces()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventOpenWindow] {
+			subscriber.OpenWindow(toAddress(values[0]), values[1], values[2], values[3])
+		}
 		break
 	case EventCloseWindow:
-		preprocessClientAddress(values)
-		hyprlCtl.syncWorkspaces()
-		hyprlCtl.syncClients()
+		s.syncWorkspaces()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventCloseWindow] {
+			subscriber.CloseWindow(toAddress(values[0]))
+		}
 		break
 	case EventMoveWindow:
-		preprocessClientAddress(values)
-		hyprlCtl.syncWorkspaces()
-		hyprlCtl.syncClients()
+		s.syncWorkspaces()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventMoveWindow] {
+			subscriber.MoveWindow(toAddress(values[0]), values[1])
+		}
 		break
 	case EventMoveWindowv2:
-		preprocessClientAddress(values)
-		hyprlCtl.syncWorkspaces()
-		hyprlCtl.syncClients()
+		s.syncWorkspaces()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventMoveWindowv2] {
+			subscriber.MoveWindowV2(toAddress(values[0]), toInt(values[1]), values[2])
+		}
 		break
 	case EventOpenLayer:
+		for _, subscriber := range s.subscribers[EventOpenLayer] {
+			subscriber.OpenLayer(values[0])
+		}
 		break
 	case EventCloseLayer:
+		for _, subscriber := range s.subscribers[EventCloseLayer] {
+			subscriber.CloseLayer(values[0])
+		}
 		break
 	case EventSubMap:
+		for _, subscriber := range s.subscribers[EventSubMap] {
+			subscriber.SubMap(values[0])
+		}
 		break
 	case EventChangeFloatingMode:
-		preprocessClientAddress(values)
-		hyprlCtl.syncClients()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventChangeFloatingMode] {
+			subscriber.ChangeFloatingMode(toAddress(values[0]), toBool(values[1]))
+		}
 		break
 	case EventUrgent:
-		preprocessClientAddress(values)
+		for _, subscriber := range s.subscribers[EventUrgent] {
+			subscriber.Urgent(toAddress(values[0]))
+		}
 		break
 	case EventMinimize:
-		preprocessClientAddress(values)
+		for _, subscriber := range s.subscribers[EventMinimize] {
+			subscriber.Minimize(toAddress(values[0]), toBool(values[1]))
+		}
 		break
 	case EventScreencast:
+		for _, subscriber := range s.subscribers[EventScreencast] {
+			subscriber.Screencast(toBool(values[0]), toBool(values[1]))
+		}
 		break
 	case EventWindowTitle:
-		preprocessClientAddress(values)
-		hyprlCtl.syncClients()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventWindowTitle] {
+			subscriber.WindowTitle(toAddress(values[0]))
+		}
 		break
 	case EventIgnoreGroupLock:
+		for _, subscriber := range s.subscribers[EventIgnoreGroupLock] {
+			subscriber.IgnoreGroupLock(toBool(values[0]))
+		}
 		break
 	case EventLockGroups:
+		for _, subscriber := range s.subscribers[EventLockGroups] {
+			subscriber.LockGroups(toBool(values[0]))
+		}
 		break
 	case EventConfigReloaded:
+		for _, subscriber := range s.subscribers[EventConfigReloaded] {
+			subscriber.ConfigReloaded()
+		}
 		break
 	case EventPin:
-		preprocessClientAddress(values)
-		hyprlCtl.syncClients()
+		s.syncClients()
+		for _, subscriber := range s.subscribers[EventPin] {
+			subscriber.Pin(toAddress(values[0]), toBool(values[1]))
+		}
 		break
 	}
-
-	eventMethod := eventMethods[msg.Type]
-	eventMethod.call(msg.Type, values)
 }
-
-type EventType string
 
 type EventData struct {
 	Type EventType
 	Data string
 }
 
-type HyprlandEventHandler interface {
+type Subscriber interface {
 	Workspace(workspaceName string)
 	WorkspaceV2(workspaceId int, workspaceName string)
 	FocusedMonitor(monitorName string, workspaceName string)
@@ -184,6 +248,8 @@ type HyprlandEventHandler interface {
 	ConfigReloaded()
 	Pin(windowAddress string, pinned bool)
 }
+
+type EventType string
 
 const (
 	EventWorkspace          EventType = "workspace"
@@ -222,70 +288,15 @@ const (
 	EventPin                EventType = "pin"
 )
 
-var eventMethods = newEventMethods()
-
-func newEventMethods() map[EventType]*eventMethod {
-	iface := reflect.TypeOf(struct{ HyprlandEventHandler }{})
-	lenMethods := iface.NumMethod()
-
-	eventMethods := make(map[EventType]*eventMethod, lenMethods)
-
-	for i := 0; i < lenMethods; i++ {
-		method := iface.Method(i)
-		lenParams := method.Type.NumIn()
-
-		eventMethod := &eventMethod{
-			name:   method.Name,
-			values: make([]valueConvertor, lenParams-1),
-		}
-
-		for j := 1; j < lenParams; j++ {
-			t := method.Type.In(j)
-			switch t.Kind() {
-			case reflect.Int:
-				eventMethod.values[j-1] = toInt
-				break
-			case reflect.Bool:
-				eventMethod.values[j-1] = toBool
-				break
-			default:
-				eventMethod.values[j-1] = toString
-				break
-			}
-		}
-		eventMethods[EventType(strings.ToLower(method.Name))] = eventMethod
-	}
-	return eventMethods
+func toInt(value string) int {
+	ret, _ := strconv.Atoi(value)
+	return ret
 }
 
-func (m *eventMethod) call(eventType EventType, values []string) {
-	in := make([]reflect.Value, len(m.values)+1)
-	for i, value := range values {
-		in[i+1] = m.values[i](value)
-	}
-
-	for _, subscriber := range eventSubscribers[eventType] {
-		in[0] = reflect.ValueOf(subscriber.handle)
-		subscriber.callback.Call(in)
-	}
+func toBool(value string) bool {
+	return value == "1"
 }
 
-type eventMethod struct {
-	name   string
-	values []valueConvertor
-}
-
-type valueConvertor = func(value string) reflect.Value
-
-func toInt(value string) reflect.Value {
-	intValue, _ := strconv.Atoi(value)
-	return reflect.ValueOf(intValue)
-}
-
-func toBool(value string) reflect.Value {
-	return reflect.ValueOf(value == "1")
-}
-
-func toString(value string) reflect.Value {
-	return reflect.ValueOf(value)
+func toAddress(value string) string {
+	return fmt.Sprintf("0x%s", value)
 }

@@ -1,9 +1,6 @@
 package systemStats
 
 import (
-	"log"
-	"reflect"
-	"strings"
 	"sync"
 	"time"
 )
@@ -11,51 +8,65 @@ import (
 type EventType string
 
 const (
-	EventAll    EventType = "updateall"
-	EventCpu    EventType = "updatecpu"
-	EventMemory EventType = "updatememory"
-	EventNvidia EventType = "updatenvidia"
+	EventAll    EventType = "UpdateAll"
+	EventCpu    EventType = "UpdateCpu"
+	EventMemory EventType = "UpdateMemory"
+	EventNvidia EventType = "UpdateNvidia"
 )
 
-type SystemStatsEventHandler interface {
+type SystemStats struct {
+	Cpu    *CpuStats
+	Memory *MemoryStats
+	Nvidia *NvidiaStats
+}
+
+type Subscriber interface {
 	UpdateAll(stats *SystemStats)
 	UpdateCpu(cpu *CpuStats)
 	UpdateMemory(memory *MemoryStats)
 	UpdateNvidia(nvidia *NvidiaStats)
 }
 
-type systemStatsService struct {
-	listening   bool
-	subscribers []SystemStatsEventHandler
+type service struct {
+	started     bool
+	subscribers map[EventType][]Subscriber
+	stats       *SystemStats
 }
 
-var service = newSystemStatsService()
+var _service = newService()
 
-func newSystemStatsService() *systemStatsService {
-	service := &systemStatsService{
-		listening: false,
+func newService() *service {
+	service := &service{
+		started:     false,
+		subscribers: make(map[EventType][]Subscriber),
+		stats:       &SystemStats{},
 	}
 	return service
 }
 
 func StartService() {
-	service.listen()
+	_service.start()
 }
 
-func (service *systemStatsService) listen() {
-	if service.listening {
+func (s *service) stop() {
+	s.started = false
+}
+
+func (s *service) start() {
+	if s.started {
 		return
 	}
 
-	service.listening = true
-
-	log.Printf("methods? %+v\n", eventMethods)
+	s.started = true
 
 	go func() {
-		stats := &SystemStats{}
+		defer s.stop()
 
 		var wg sync.WaitGroup
 		for range time.Tick(time.Second) {
+			if s.started == false {
+				return
+			}
 
 			done := func() {
 				wg.Done()
@@ -63,91 +74,63 @@ func (service *systemStatsService) listen() {
 
 			wg.Add(3)
 
-			runCpu(stats, done)
-			runMemory(stats, done)
-			runNvidia(stats, done)
+			s.runCpu(done)
+			s.runMemory(done)
+			s.runNvidia(done)
 
 			wg.Wait()
 
-			if eventMethod, found := eventMethods[EventAll]; found {
-				eventMethod.call(EventAll, []any{stats})
+			for _, subscriber := range s.subscribers[EventAll] {
+				subscriber.UpdateAll(s.stats)
 			}
 		}
 	}()
 }
 
-// / Registering events
-type valueConvertor = func(value any) reflect.Value
-
-type eventMethod struct {
-	name   string
-	values []valueConvertor
+func Register[T Subscriber](handle T, events ...EventType) {
+	for _, event := range events {
+		_service.subscribers[event] = append(_service.subscribers[event], handle)
+	}
 }
 
-var eventMethods = newEventMethods()
-
-func newEventMethods() map[EventType]*eventMethod {
-	iface := reflect.TypeOf(struct{ SystemStatsEventHandler }{})
-	lenMethods := iface.NumMethod()
-
-	eventMethods := make(map[EventType]*eventMethod, lenMethods)
-
-	for i := 0; i < lenMethods; i++ {
-		method := iface.Method(i)
-		lenParams := method.Type.NumIn()
-
-		eventMethod := &eventMethod{
-			name:   method.Name,
-			values: make([]valueConvertor, lenParams-1),
+func (s *service) runCpu(done func()) {
+	go func() {
+		if cpu, _ := GetCpuStats(); cpu != nil {
+			s.stats.Cpu = cpu
 		}
 
-		for j := 1; j < lenParams; j++ {
-			t := method.Type.In(j)
-			switch t.Kind() {
-			// case reflect.Int:
-			// 	eventMethod.values[j-1] = toInt
-			// 	break
-			// case reflect.Bool:
-			// 	eventMethod.values[j-1] = toBool
-			// 	break
-			default:
-				eventMethod.values[j-1] = func(value any) reflect.Value {
-					return reflect.ValueOf(value)
-				}
-				break
-			}
+		for _, subscriber := range s.subscribers[EventCpu] {
+			subscriber.UpdateCpu(s.stats.Cpu)
 		}
-		eventMethods[EventType(strings.ToLower(method.Name))] = eventMethod
-	}
-	return eventMethods
+
+		done()
+	}()
 }
 
-func (m *eventMethod) call(eventType EventType, values []any) {
-	in := make([]reflect.Value, len(m.values)+1)
-	for i, value := range values {
-		in[i+1] = m.values[i](value)
-	}
+func (s *service) runMemory(done func()) {
+	go func() {
+		if memory, _ := GetMemoryStats(); memory != nil {
+			s.stats.Memory = memory
+		}
 
-	for _, subscriber := range eventSubscribers[eventType] {
-		in[0] = reflect.ValueOf(subscriber.handle)
-		subscriber.callback.Call(in)
-	}
+		for _, subscriber := range s.subscribers[EventMemory] {
+			subscriber.UpdateMemory(s.stats.Memory)
+		}
+
+		done()
+	}()
 }
 
-type subscriber struct {
-	callback reflect.Value
-	handle   any
-}
+func (s *service) runNvidia(done func()) {
+	go func() {
+		if nvidia, _ := GetNvidiaStats(); nvidia != nil {
+			s.stats.Nvidia = nvidia
+		}
 
-type subscribers map[EventType][]subscriber
+		for _, subscriber := range s.subscribers[EventNvidia] {
+			subscriber.UpdateNvidia(s.stats.Nvidia)
+		}
 
-var eventSubscribers = make(subscribers)
-
-func RegisterForEvents(handler any) {
-	objType := reflect.TypeOf(handler)
-	for i := 0; i < objType.NumMethod(); i++ {
-		method := objType.Method(i)
-		eventType := EventType(strings.ToLower(method.Name))
-		eventSubscribers[eventType] = append(eventSubscribers[eventType], subscriber{method.Func, handler})
-	}
+		done()
+	}()
 }
