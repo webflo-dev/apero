@@ -2,8 +2,6 @@ package notifications
 
 import (
 	"errors"
-	"log"
-	"reflect"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
@@ -16,33 +14,46 @@ const (
 	signalActionInvoked = iface + ".ActionInvoked"
 )
 
-type notificationServer struct {
+type service struct {
 	counter       uint32
 	notifications map[uint32]Notification
 	started       bool
-	subscribers   []NotificationsEventHandler
+	subscribers   map[EventType][]Subscriber
 	doNotDisturb  bool
 }
 
-var server = newNotificationServer()
+var _service = newService()
 
-func newNotificationServer() *notificationServer {
-	return &notificationServer{
+func newService() *service {
+	return &service{
 		counter:       0,
 		started:       false,
 		doNotDisturb:  false,
 		notifications: make(map[uint32]Notification),
+		subscribers:   make(map[EventType][]Subscriber),
 	}
 }
 
-func StartNotificationServer() error {
+func StartService() error {
+	return _service.start()
+}
+
+func (s *service) stop() {
+	s.started = false
+}
+
+func (s *service) start() error {
+	if s.started {
+		return nil
+	}
+
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		logger.Println("Notification server is disabled (failed to connect to session bus)", err)
 		return errors.New("Notification server is disabled (failed to connect to session bus)")
 	}
 
-	err = conn.ExportAll(server, path, iface)
+	err = conn.ExportAll(_service, path, iface)
 	if err != nil {
 		logger.Println("Notification server is disabled (failed to export to dbus)", err)
 		return errors.New("Notification server is disabled (failed to export to dbus)")
@@ -75,7 +86,7 @@ func StartNotificationServer() error {
 	go func() {
 		defer conn.Close()
 
-		server.started = true
+		_service.started = true
 		logger.Printf("Listening on iface=%s, path=%s ...\n", iface, path)
 
 		select {}
@@ -84,7 +95,7 @@ func StartNotificationServer() error {
 	return nil
 }
 
-func (server notificationServer) GetCapabilities() []string {
+func (s *service) GetCapabilities() []string {
 	return []string{
 		"action-icons",
 		"actions",
@@ -99,26 +110,26 @@ func (server notificationServer) GetCapabilities() []string {
 	}
 }
 
-func (server notificationServer) GetServerInformation() (string, string, string, string) {
+func (s *service) GetServerInformation() (string, string, string, string) {
 	return "apero", "webflo-dev", "0.1", "1.2"
 }
 
-func (server notificationServer) Notify(appName string, replacesId uint32, appIcon string, summary string, body string, actions []string, hints hints, expireTimeout int) uint32 {
+func (s *service) Notify(appName string, replacesId uint32, appIcon string, summary string, body string, actions []string, hints hints, expireTimeout int) uint32 {
 
 	id := replacesId
 	if id == 0 {
-		server.counter++
-		id = server.counter
+		s.counter++
+		id = s.counter
 	}
 
 	n := newNotification(id, appName, appIcon, summary, body, actions, hints)
 
-	server.notifications[n.id] = n
+	s.notifications[n.id] = n
 
 	// logger.Printf("Notification > %+v\n", n)
 
-	if server.doNotDisturb == false {
-		for _, subscriber := range server.subscribers {
+	if s.doNotDisturb == false {
+		for _, subscriber := range s.subscribers[EventNewNotification] {
 			subscriber.NewNotification(n)
 		}
 	}
@@ -126,17 +137,17 @@ func (server notificationServer) Notify(appName string, replacesId uint32, appIc
 	return uint32(n.id)
 }
 
-func (server notificationServer) CloseNotification(id uint32) {
-	delete(server.notifications, id)
+func (s *service) CloseNotification(id uint32) {
+	delete(s.notifications, id)
 
-	if server.doNotDisturb == false {
-		for _, subscriber := range server.subscribers {
+	if s.doNotDisturb == false {
+		for _, subscriber := range s.subscribers[EventNotificationRemoved] {
 			subscriber.NotificationRemoved(id)
 		}
 	}
 }
 
-func (server notificationServer) InvokeAction(notificationId uint32, actionKey string) error {
+func (s *service) InvokeAction(notificationId uint32, actionKey string) error {
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		logger.Println("Failed to emit signal ActionInvoked (dbus connection)", err)
@@ -148,13 +159,10 @@ func (server notificationServer) InvokeAction(notificationId uint32, actionKey s
 		return errors.New("Failed to emit signal ActionInvoked (emit signal)")
 	}
 
-	for _, subscriber := range server.subscribers {
-		log.Printf("ActionInvoked > %+v\n", subscriber)
-		if callback, ok := reflect.TypeOf(subscriber).MethodByName("ActionInvoked"); ok {
-			log.Printf("ActionInvoked method found > %+v\n", callback)
-			subscriber.ActionInvoked(notificationId, actionKey)
-		}
+	for _, subscriber := range s.subscribers[EventActionInvoked] {
+		subscriber.ActionInvoked(notificationId, actionKey)
 	}
+
 	return nil
 }
 

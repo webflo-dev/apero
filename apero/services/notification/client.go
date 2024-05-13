@@ -1,9 +1,6 @@
 package notification
 
 import (
-	"fmt"
-	"log"
-
 	"webflo-dev/apero/services/notifications"
 )
 
@@ -15,24 +12,33 @@ const (
 	UrgencyNormal   Urgency = 1
 )
 
-type Actions[T any] map[string]func(T)
+type ActionRunner[T any] func(T)
+type Actions[T any] map[string]ActionRunner[T]
+
+func (a Actions[T]) getKeys() []string {
+	keys := make([]string, 0, len(a))
+	for key := range a {
+		keys = append(keys, key)
+	}
+	return keys
+}
 
 type notificationEventHandler[T any] struct {
-	notifications.NotificationsEventHandler
+	notifications.Subscriber
 	id           uint32
 	notification Notification[T]
 }
 
 type Notification[T any] struct {
-	replaceId    uint32
-	appName      string
-	icon         string
-	summary      string
-	body         string
-	urgency      Urgency
-	category     string
-	actions      Actions[T]
-	actionHandle T
+	replaceId uint32
+	appName   string
+	icon      string
+	summary   string
+	body      string
+	urgency   Urgency
+	category  string
+	actions   Actions[T]
+	handle    T
 }
 
 func NewNotification[T any](handle T, summary string, body string) Notification[T] {
@@ -40,6 +46,8 @@ func NewNotification[T any](handle T, summary string, body string) Notification[
 		summary: summary,
 		body:    body,
 		urgency: UrgencyNormal,
+		actions: make(Actions[T]),
+		handle:  handle,
 	}
 }
 
@@ -78,104 +86,31 @@ func (n *Notification[T]) Replace(notificationId uint32) *Notification[T] {
 	return n
 }
 
-func (n *Notification[T]) WithActions(actions Actions[T]) *Notification[T] {
-	n.actions = actions
+func (n *Notification[T]) WithAction(actionKey string, action ActionRunner[T]) *Notification[T] {
+	n.actions[actionKey] = action
 	return n
 }
 
-func Notify[T any](notification Notification[T]) uint32 {
-	actionKeys := make([]string, 0, len(notification.actions))
-	for key := range notification.actions {
-		actionKeys = append(actionKeys, key)
-	}
-
-	id := notifications.Notify(notification.appName, notification.replaceId, notification.icon, notification.summary, notification.body, actionKeys, nil, 0)
+func Notify[T any](n Notification[T]) uint32 {
+	id := notifications.Notify(n.appName, n.replaceId, n.icon, n.summary, n.body, n.actions.getKeys(), nil, 0)
 
 	handle := &notificationEventHandler[T]{
 		id:           id,
-		notification: notification,
+		notification: n,
 	}
-	notifications.WatchNotifications(handle)
+
+	notifications.Register(handle, notifications.EventActionInvoked)
 
 	return id
 }
 
-func (n notificationEventHandler[T]) ActionInvoked(notificationId uint32, actionKey string) {
-	log.Println("notificationEventHandler::ActionInvoked", notificationId, actionKey)
+func (n *notificationEventHandler[T]) ActionInvoked(notificationId uint32, actionKey string) {
 	if n.id != notificationId {
 		return
 	}
 
-	// n.notification.actions[actionKey](n.notification.actionHandle)
-
-	// if action, ok := n.notification.actions[actionKey]; ok {
-	// 	action()
-	// }
-}
-
-///////////////////////////////////////////////////////////:
-
-// type mystruct struct {
-// 	name string
-// }
-
-// func (my *mystruct) doA(i int) {
-// 	fmt.Printf("[doA]: I'm %s, param is: %d\n", my.name, i)
-// }
-
-// func (my *mystruct) doB(i int) {
-// 	fmt.Printf("[doB]: I'm %s, param is: %d\n", my.name, i)
-// }
-
-// func main() {
-// 	my1 := &mystruct{"Bob"}
-// 	my2 := &mystruct{"Alice"}
-// 	lookupMap := map[string]func(int){
-// 			"action1": my1.doA,
-// 			"action2": my2.doB,
-// 	}
-
-// 	lookupMap["action1"](11)
-// 	lookupMap["action2"](22)
-// }
-
-// func main() {
-// 	lookupMap := map[string]func(*mystruct, int){
-// 		"action1": (*mystruct).doA,
-// 		"action2": (*mystruct).doB,
-// 	}
-
-// 	my1 := &mystruct{"Bob"}
-// 	my2 := &mystruct{"Alice"}
-// 	lookupMap["action1"](my1, 11)
-// 	lookupMap["action2"](my2, 22)
-// }
-
-type mystruct struct {
-	name string
-}
-
-func (my *mystruct) doA() {
-	fmt.Printf("[doA]: I'm %s\n", my.name)
-}
-
-func (my *mystruct) doB() {
-	fmt.Printf("[doB]: I'm %s\n", my.name)
-}
-
-// Define a type for the function that takes a receiver of any type T and has no return value
-type toto[T any] map[string]func(T)
-
-func sdfdsfdsf() {
-	// Use the actionFunc type in the lookupMap
-	lookupMap := toto[*mystruct]{
-		"action1": (*mystruct).doA,
-		"action2": (*mystruct).doB,
+	if action, ok := n.notification.actions[actionKey]; ok {
+		action(n.notification.handle)
+		notifications.Unregister(n, notifications.EventActionInvoked)
 	}
-
-	my1 := &mystruct{"Bob"}
-	my2 := &mystruct{"Alice"}
-
-	lookupMap["action1"](my1)
-	lookupMap["action2"](my2)
 }

@@ -18,12 +18,12 @@ func (s *service) syncActiveClient() {
 	writeCmd("j/activewindow", &s.activeClient)
 }
 
-func (s *service) syncMonitors() {
-	writeCmd("j/monitors", &s.monitors)
-	for _, monitor := range s.monitors {
-		if monitor.Focused {
-			s.activeMonitor = monitor
-			break
-		}
-	}
-}
+// func (s *service) syncMonitors() {
+// 	writeCmd("j/monitors", &s.monitors)
+// 	for _, monitor := range s.monitors {
+// 		if monitor.Focused {
+// 			s.activeMonitor = monitor
+// 			break
+// 		}
+// 	}
+// }

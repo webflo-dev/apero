@@ -1,10 +1,16 @@
 package notifications
 
-import (
-	"errors"
+type EventType string
+
+const (
+	EventNewNotification      EventType = "NewNotification"
+	EventNotificationRemoved  EventType = "NotificationRemoved"
+	EventNotificationsCleared EventType = "NotificationsCleared"
+	EventDoNotDisturbChanged  EventType = "DoNotDisturbchanged"
+	EventActionInvoked        EventType = "ActionInvoked"
 )
 
-type NotificationsEventHandler interface {
+type Subscriber interface {
 	NewNotification(notification Notification)
 	NotificationRemoved(id uint32)
 	NotificationsCleared()
@@ -13,77 +19,88 @@ type NotificationsEventHandler interface {
 }
 
 func GetServerCapabilities() []string {
-	return server.GetCapabilities()
+	return _service.GetCapabilities()
 }
+
 func GetServerInformation() (string, string, string, string) {
-	return server.GetServerInformation()
+	return _service.GetServerInformation()
 }
 
-func WatchNotifications(handler NotificationsEventHandler) error {
-	if server.started == false {
-		logger.Println("notifications server is not started")
-		return errors.New("notifications server is not started")
+func Register[T Subscriber](handle T, events ...EventType) {
+	for _, event := range events {
+		_service.subscribers[event] = append(_service.subscribers[event], handle)
 	}
+}
 
-	server.subscribers = append(server.subscribers, handler)
-
-	return nil
+func Unregister(handle Subscriber, events ...EventType) {
+	for _, event := range events {
+		handlers := _service.subscribers[event]
+		for i, h := range handlers {
+			if h == handle {
+				_service.subscribers[event] = append(handlers[:i], handlers[i+1:]...)
+				break
+			}
+		}
+	}
 }
 
 func SetDoNotDisturb(enabled bool) {
-	if server.doNotDisturb == enabled {
+	if _service.doNotDisturb == enabled {
 		return
 	}
 
-	server.doNotDisturb = enabled
+	_service.doNotDisturb = enabled
 
-	for _, handler := range server.subscribers {
+	for _, handler := range _service.subscribers[EventDoNotDisturbChanged] {
 		handler.DoNotDisturbChanged(enabled)
 	}
 }
 
 func ClearAllNotifications(notifyEach bool) {
 	if notifyEach == false {
-		clear(server.notifications)
-		for _, handler := range server.subscribers {
+		clear(_service.notifications)
+		for _, handler := range _service.subscribers[EventNotificationsCleared] {
 			handler.NotificationsCleared()
 		}
-	} else {
-		ids := make([]uint32, 0, len(server.notifications))
-		for id := range server.notifications {
-			ids = append(ids, id)
-		}
-		for id := range ids {
-			server.CloseNotification(uint32(id))
-		}
+		return
+	}
+
+	ids := make([]uint32, 0, len(_service.notifications))
+	for id := range _service.notifications {
+		ids = append(ids, id)
+	}
+	for id := range ids {
+		_service.CloseNotification(uint32(id))
 	}
 }
 
 func GetNotifications() []Notification {
-	notifications := make([]Notification, 0, len(server.notifications))
-	for _, n := range server.notifications {
+	notifications := make([]Notification, 0, len(_service.notifications))
+	for _, n := range _service.notifications {
 		notifications = append(notifications, n)
 	}
 	return notifications
 }
 
 func GetNotification(id uint32) (Notification, bool) {
-	n, ok := server.notifications[id]
+	n, ok := _service.notifications[id]
 	return n, ok
 }
 
 func HasNotifications() bool {
-	return len(server.notifications) > 0
+	return len(_service.notifications) > 0
 }
 
 func DoNotDisturb() bool {
-	return server.doNotDisturb
+	return _service.doNotDisturb
 }
 
 func Notify(appName string, replacesId uint32, appIcon string, summary string, body string, actions []string, hints hints, expireTimeout int) uint32 {
-	return server.Notify(appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout)
+	return _service.Notify(appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout)
 }
 
 func InvokeAction(notificationId uint32, actionKey string) {
-	server.InvokeAction(notificationId, actionKey)
+	if n, ok := _service.notifications[notificationId]; ok {
+		_service.InvokeAction(n.id, actionKey)
+	}
 }

@@ -15,8 +15,8 @@ type service struct {
 	activeWorkspace Workspace
 	clients         []Client
 	activeClient    Client
-	monitors        []Monitor
-	activeMonitor   Monitor
+	// monitors        []Monitor
+	// activeMonitor   Monitor
 }
 
 var _service = newService()
@@ -29,7 +29,7 @@ func newService() *service {
 
 	service.syncWorkspaces()
 	service.syncClients()
-	service.syncMonitors()
+	// service.syncMonitors()
 
 	return service
 }
@@ -104,13 +104,13 @@ func ActiveClient() Client {
 	return _service.activeClient
 }
 
-func Monitors() []Monitor {
-	return _service.monitors
-}
+// func Monitors() []Monitor {
+// 	return _service.monitors
+// }
 
-func ActiveMonitor() Monitor {
-	return _service.activeMonitor
-}
+// func ActiveMonitor() Monitor {
+// 	return _service.activeMonitor
+// }
 
 func Binds() ([]Bind, error) {
 	var binds []Bind

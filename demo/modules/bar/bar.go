@@ -8,7 +8,7 @@ import (
 )
 
 func NewBar() *gtk.Window {
-	notifications.StartNotificationServer()
+	notifications.StartService()
 
 	window := ui.NewWindow(ui.WindowProps{
 		Name:          "bar",

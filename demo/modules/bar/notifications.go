@@ -18,18 +18,20 @@ import (
 )
 
 type notificationIndicatorHandler struct {
-	notifications.NotificationsEventHandler
+	notifications.Subscriber
 	box  *gtk.Box
 	icon *gtk.Image
 }
 
-type notificationActionHandler struct{}
+type notificationActionHandler struct {
+	id string
+}
 
 func (h *notificationActionHandler) doAction1() {
-	log.Println("do action1")
+	log.Println("do action1 from", h.id)
 }
 func (h *notificationActionHandler) doAction2() {
-	log.Println("do action2")
+	log.Println("do action2 from", h.id)
 }
 func doGenericAction() {
 
@@ -53,7 +55,7 @@ func newNotificationModule() *gtk.Box {
 
 	handler.update(notifications.DoNotDisturb(), notifications.HasNotifications())
 
-	notifications.WatchNotifications(handler)
+	notifications.Register(handler, notifications.EventNewNotification, notifications.EventDoNotDisturbChanged, notifications.EventNotificationsCleared)
 
 	button.Connect("button-press-event", func(_ *gtk.Button, ev *gdk.Event) bool {
 		btn := gdk.EventButtonNewFromEvent(ev)
@@ -65,18 +67,25 @@ func newNotificationModule() *gtk.Box {
 			notifications.ClearAllNotifications(false)
 			return true
 		case gdk.BUTTON_MIDDLE:
-			notif := notification.NewNotification(&notificationActionHandler{}, "Message from Apero", "bla bla bla")
-
+			notif := notification.NewNotification(&notificationActionHandler{id: "A"}, "Message from Apero (1)", "bla bla bla (1)")
 			notif.WithUrgency(notification.UrgencyCritical)
-			notif.WithActions(notification.Actions[*notificationActionHandler]{
-				"action1": (*notificationActionHandler).doAction1,
-				"action2": (*notificationActionHandler).doAction2,
-			})
+			notif.WithAction("action1", (*notificationActionHandler).doAction1)
+			notif.WithAction("action2", (*notificationActionHandler).doAction2)
 
-			id := notification.Notify(notif)
+			id1 := notification.Notify(notif)
+			log.Println("Notification ID#1:", id1)
 
-			log.Println("Notification ID:", id)
-			notifications.InvokeAction(id, "action2")
+			notifications.InvokeAction(id1, "action2")
+
+			notif2 := notification.NewNotification(&notificationActionHandler{id: "B"}, "Message from Apero (2)", "bla bla bla (2)")
+			notif2.WithUrgency(notification.UrgencyCritical)
+			notif2.WithAction("action1", (*notificationActionHandler).doAction1)
+			notif2.WithAction("action2", (*notificationActionHandler).doAction2)
+
+			id2 := notification.Notify(notif2)
+			log.Println("Notification ID#2:", id2)
+
+			notifications.InvokeAction(id2, "action1")
 
 			// notif := &notification.Notification{
 			// 	appName: "test",
