@@ -1,12 +1,14 @@
 package utils
 
+// These functions are not used. They are here for reference only about how to use reflect module
+
 import (
 	"log"
 	"reflect"
 	"strconv"
 )
 
-func ImplementsMethod(obj any, methodName string, checkEmbed bool) bool {
+func implementsMethod(obj any, methodName string, checkEmbed bool) bool {
 
 	objType := reflect.TypeOf(obj)
 
@@ -39,7 +41,7 @@ func ImplementsMethod(obj any, methodName string, checkEmbed bool) bool {
 	return false
 }
 
-func CallMethod(handler interface{}, target interface{}, rawValues []string) {
+func callMethod(handler interface{}, target interface{}, rawValues []string) {
 	method := reflect.ValueOf(target)
 
 	// reflect.TypeOf(target).MethodByName("")

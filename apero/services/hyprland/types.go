@@ -109,13 +109,13 @@ const (
 )
 
 type Layer struct {
-	Address     string //"address": "0x328b670",
-	X           int    // "x": 0,
-	Y           int    //"y": 0,
-	Width       int    //"w": 3840,
-	Height      int    //"h": 2160,
-	Namespace   string //"namespace": "wallpaper"
-	MonitorName string //"monitorName": "DP-1",
+	Address     string
+	X           int
+	Y           int
+	Width       int
+	Height      int
+	Namespace   string
+	MonitorName string
 	Layer       LayerType
 }
 

@@ -45,6 +45,6 @@ func (a *AperoCtl) Quit(args *EmptyArgs, reply *int) error {
 
 func (a *AperoCtl) ApplyCSS(args *EmptyArgs, reply *int) error {
 	ipcLogger.Println("ApplyCSS")
-	ApplyCSS("")
+	_app.applyCSS()
 	return nil
 }

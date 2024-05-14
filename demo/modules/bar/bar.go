@@ -1,14 +1,12 @@
 package bar
 
 import (
-	"webflo-dev/apero/services/notifications"
 	"webflo-dev/apero/ui"
 
 	"github.com/gotk3/gotk3/gtk"
 )
 
 func NewBar() *gtk.Window {
-	notifications.StartService()
 
 	window := ui.NewWindow(ui.WindowProps{
 		Name:          "bar",

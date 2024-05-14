@@ -8,6 +8,11 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+type appEvent struct {
+	apero.AppEvent
+	windows []*gtk.Window
+}
+
 func main() {
 
 	useInspector := false
@@ -16,14 +21,18 @@ func main() {
 		useInspector = argsWithoutProg[0] == "-i" || argsWithoutProg[0] == "--inspector"
 	}
 
-	apero.Start(&apero.UserConfig{
-		Windows:      GetWindows,
-		UseInspector: useInspector,
-	})
+	app := apero.NewApp()
+	app.SetAppId("demo.app")
+	app.UseInspector = useInspector
+
+	handle := &appEvent{}
+
+	app.Start(handle)
 }
 
-func GetWindows() []*gtk.Window {
-	return []*gtk.Window{
+func (a appEvent) LoadWindows() []*gtk.Window {
+	a.windows = []*gtk.Window{
 		bar.NewBar(),
 	}
+	return a.windows
 }
