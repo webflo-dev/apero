@@ -6,6 +6,7 @@ import (
 	"webflo-dev/apero/services/hyprland"
 	"webflo-dev/apero/services/notifications"
 	sysStat "webflo-dev/apero/services/system-stats"
+	"webflo-dev/apero/services/systray"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -89,4 +90,5 @@ func (app *AppConfiguration) startServices() {
 	hyprland.StartService()
 	sysStat.StartService()
 	notifications.StartService()
+	systray.StartService()
 }
