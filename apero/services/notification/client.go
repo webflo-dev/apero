@@ -1,7 +1,17 @@
 package notification
 
 import (
-	"webflo-dev/apero/services/notifications"
+	"errors"
+
+	"github.com/godbus/dbus/v5"
+)
+
+const (
+	path                = "/org/freedesktop/Notifications"
+	iface               = "org.freedesktop.Notifications"
+	methodNotify        = iface + ".Notify"
+	methodClose         = iface + ".CloseNotification"
+	signalActionInvoked = iface + ".ActionInvoked"
 )
 
 type Urgency uint16
@@ -12,7 +22,14 @@ const (
 	UrgencyNormal   Urgency = 1
 )
 
-type ActionRunner[T any] func(T)
+type Timeout int32
+
+const (
+	ExpiresDefault Timeout = -1
+	ExpiresNever   Timeout = 0
+)
+
+type ActionRunner[T any] func(handle T)
 type Actions[T any] map[string]ActionRunner[T]
 
 func (a Actions[T]) getKeys() []string {
@@ -23,13 +40,13 @@ func (a Actions[T]) getKeys() []string {
 	return keys
 }
 
-type notificationEventHandler[T any] struct {
-	notifications.Subscriber
-	id           uint32
-	notification Notification[T]
+type Action struct {
+	key  string
+	text string
 }
 
 type Notification[T any] struct {
+	id        uint32
 	replaceId uint32
 	appName   string
 	icon      string
@@ -37,17 +54,21 @@ type Notification[T any] struct {
 	body      string
 	urgency   Urgency
 	category  string
+	timeout   Timeout
 	actions   Actions[T]
+	resident  map[string]bool
 	handle    T
 }
 
 func NewNotification[T any](handle T, summary string, body string) Notification[T] {
 	return Notification[T]{
-		summary: summary,
-		body:    body,
-		urgency: UrgencyNormal,
-		actions: make(Actions[T]),
-		handle:  handle,
+		summary:  summary,
+		body:     body,
+		urgency:  UrgencyNormal,
+		actions:  make(Actions[T]),
+		handle:   handle,
+		timeout:  ExpiresDefault,
+		resident: make(map[string]bool),
 	}
 }
 
@@ -86,31 +107,99 @@ func (n *Notification[T]) Replace(notificationId uint32) *Notification[T] {
 	return n
 }
 
-func (n *Notification[T]) WithAction(actionKey string, action ActionRunner[T]) *Notification[T] {
-	n.actions[actionKey] = action
+func (n *Notification[T]) WithTimeout(timeout Timeout) *Notification[T] {
+	n.timeout = timeout
 	return n
 }
 
-func Notify[T any](n Notification[T]) uint32 {
-	id := notifications.Notify(n.appName, n.replaceId, n.icon, n.summary, n.body, n.actions.getKeys(), nil, 0)
-
-	handle := &notificationEventHandler[T]{
-		id:           id,
-		notification: n,
-	}
-
-	notifications.Register(handle, notifications.EventActionInvoked)
-
-	return id
+func (n *Notification[T]) WithAction(actionKey string, resident bool, action ActionRunner[T]) *Notification[T] {
+	n.actions[actionKey] = action
+	n.resident[actionKey] = resident
+	return n
 }
 
-func (n *notificationEventHandler[T]) ActionInvoked(notificationId uint32, actionKey string) {
-	if n.id != notificationId {
+func (n *Notification[T]) Notify() (uint32, error) {
+	conn, err := dbus.ConnectSessionBus()
+	if err != nil {
+		return 0, err
+	}
+
+	var id uint32
+
+	var obj = conn.Object(iface, path)
+	err = obj.Call(methodNotify, 0,
+		n.appName,
+		n.replaceId,
+		n.icon,
+		n.summary,
+		n.body,
+		n.actions.getKeys(),
+		make(map[string]any),
+		n.timeout).Store(&id)
+	if err != nil {
+		logger.Println("Cannot notify", err)
+		err = errors.New("Cannot notify")
+		return 0, err
+	}
+
+	n.id = id
+
+	if len(n.actions) != 0 {
+		n.waitForAction(conn, id)
+	}
+
+	return id, nil
+}
+
+func (n *Notification[T]) Close() (err error) {
+	conn, err := dbus.ConnectSessionBus()
+	if err != nil {
 		return
 	}
 
-	if action, ok := n.notification.actions[actionKey]; ok {
-		action(n.notification.handle)
-		notifications.Unregister(n, notifications.EventActionInvoked)
+	var obj = conn.Object(iface, path)
+	err = obj.Call(methodClose, 0, n.id).Err
+	if err != nil {
+		logger.Println("Cannot close notification", n.id, err)
+		err = errors.New("Cannot close notification")
+		return
 	}
+
+	return
+}
+
+func (n *Notification[T]) waitForAction(conn *dbus.Conn, id uint32) (err error) {
+	if err = conn.AddMatchSignal(
+		dbus.WithMatchObjectPath(path),
+		dbus.WithMatchInterface(iface),
+	); err != nil {
+		logger.Println("Cannot handle actions", err)
+		err = errors.New("Cannot handle actions")
+		if conn != nil {
+			conn.Close()
+		}
+		return
+	}
+
+	go func() {
+		defer conn.Close()
+		c := make(chan *dbus.Signal, 4)
+		conn.Signal(c)
+		for signal := range c {
+			_id := signal.Body[0].(uint32)
+			_key := signal.Body[1].(string)
+
+			if signal.Path == path && signal.Name == signalActionInvoked && _id == id {
+				if handle, ok := n.actions[_key]; ok {
+					handle(n.handle)
+					if n.resident[_key] == false {
+						n.Close()
+					}
+					break
+				}
+			}
+		}
+	}()
+
+	return
 }

@@ -31,7 +31,7 @@ func (h *notificationActionHandler) doAction1() {
 	log.Println("do action1 from", h.id)
 }
 func (h *notificationActionHandler) doAction2() {
-	log.Println("do action2 from", h.id)
+	log.Printf("do action2 h<%s>\n", h.id)
 }
 func doGenericAction() {
 
@@ -55,7 +55,11 @@ func newNotificationModule() *gtk.Box {
 
 	handler.update(notifications.DoNotDisturb(), notifications.HasNotifications())
 
-	notifications.Register(handler, notifications.EventNewNotification, notifications.EventDoNotDisturbChanged, notifications.EventNotificationsCleared)
+	notifications.Register(handler,
+		notifications.EventNewNotification,
+		notifications.EventNotificationClosed,
+		notifications.EventDoNotDisturbChanged,
+		notifications.EventNotificationsChanged)
 
 	button.Connect("button-press-event", func(_ *gtk.Button, ev *gdk.Event) bool {
 		btn := gdk.EventButtonNewFromEvent(ev)
@@ -64,45 +68,25 @@ func newNotificationModule() *gtk.Box {
 			notifications.SetDoNotDisturb(!notifications.DoNotDisturb())
 			return true
 		case gdk.BUTTON_SECONDARY:
-			notifications.ClearAllNotifications(false)
+			notifications.ClearAllNotifications(true)
 			return true
 		case gdk.BUTTON_MIDDLE:
 			notif := notification.NewNotification(&notificationActionHandler{id: "A"}, "Message from Apero (1)", "bla bla bla (1)")
 			notif.WithUrgency(notification.UrgencyCritical)
-			notif.WithAction("action1", (*notificationActionHandler).doAction1)
-			notif.WithAction("action2", (*notificationActionHandler).doAction2)
+			notif.WithTimeout(0)
+			notif.WithAction("action1", true, (*notificationActionHandler).doAction1)
+			notif.WithAction("action2", true, (*notificationActionHandler).doAction2)
 
-			id1 := notification.Notify(notif)
+			id1, _ := notif.Notify()
 			log.Println("Notification ID#1:", id1)
 
 			notifications.InvokeAction(id1, "action2")
 
-			notif2 := notification.NewNotification(&notificationActionHandler{id: "B"}, "Message from Apero (2)", "bla bla bla (2)")
-			notif2.WithUrgency(notification.UrgencyCritical)
-			notif2.WithAction("action1", (*notificationActionHandler).doAction1)
-			notif2.WithAction("action2", (*notificationActionHandler).doAction2)
+			// notif2 := notification.NewNotification(&notificationActionHandler{id: "TimeOut"}, "Message from Apero (2)", "bla bla bla (2)")
+			// notif2.WithTimeout(10000)
+			// notif2.WithAction("action1", (*notificationActionHandler).doAction1)
+			// notif2.WithAction("action2", (*notificationActionHandler).doAction2)
 
-			id2 := notification.Notify(notif2)
-			log.Println("Notification ID#2:", id2)
-
-			notifications.InvokeAction(id2, "action1")
-
-			// notif := &notification.Notification{
-			// 	appName: "test",
-			// 	actions: notification.Actions{
-			// 		"action1": func() {
-			// 			fmt.Println("action1")
-			// 		},
-			// 		"action2": func() {
-			// 			fmt.Println("action1")
-			// 		},
-			// 	},
-			// }
-			// id := notification.Notify(*notif)
-
-			// log.Println("Notification ID:", id)
-
-			// notifications.InvokeAction(id, "action2")
 			return true
 		default:
 			return false
@@ -153,4 +137,12 @@ func (handler *notificationIndicatorHandler) DoNotDisturbChanged(enabled bool) {
 
 func (handler *notificationIndicatorHandler) NotificationsCleared() {
 	handler.update(notifications.DoNotDisturb(), notifications.HasNotifications())
+}
+
+func (handler *notificationIndicatorHandler) NotificationClosed(id uint32, reason uint32) {
+	log.Printf("[ui] Notification closed: id(%d) reason(%d)\n", id, reason)
+}
+
+func (handler *notificationIndicatorHandler) NotificationsChanged(isEmpty bool) {
+	handler.update(notifications.DoNotDisturb(), !isEmpty)
 }
