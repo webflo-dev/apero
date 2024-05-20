@@ -5,37 +5,44 @@ import (
 	"github.com/godbus/dbus/v5/prop"
 )
 
+type ItemList map[string]*SystrayItem
+
 type dbusServer struct {
-	started bool
-	conn    *dbus.Conn
-	props   *prop.Properties
-	items   map[string]string
+	started  bool
+	conn     *dbus.Conn
+	props    *prop.Properties
+	observer ServerObserver
+	items    ItemList
+}
+
+type ServerObserver interface {
+	NewItem(name string, item *SystrayItem)
+	ItemRemoved(name string)
+	ItemUpdated(name string)
 }
 
 type SystrayServer interface {
 	Start() error
 	Stop() error
 	IsStarted() bool
+	GetItems() ItemList
 }
 
-func StartNewServer() (s SystrayServer, err error) {
+func StartNewServer(observer ServerObserver) (s SystrayServer, err error) {
 	s = &dbusServer{
-		started: false,
-		items:   make(map[string]string),
+		started:  false,
+		items:    make(ItemList),
+		observer: observer,
 	}
+
 	err = s.Start()
+
 	return
 }
 
 func (s *dbusServer) Start() (err error) {
 	if s.started {
 		return nil
-	}
-
-	s.conn, err = dbus.ConnectSessionBus()
-	if err != nil {
-		logger.Println("Systray server is disabled (failed to connect to session bus)", err)
-		return
 	}
 
 	s.registerWatcher()
@@ -62,4 +69,8 @@ func (s *dbusServer) Stop() error {
 
 func (s *dbusServer) IsStarted() bool {
 	return s.started
+}
+
+func (s *dbusServer) GetItems() ItemList {
+	return s.items
 }

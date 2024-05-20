@@ -10,5 +10,16 @@ func newService() *service {
 }
 
 func StartService() {
-	StartNewServer()
+	StartNewServer(_service)
 }
+
+func GetSystrayItems() ItemList {
+	return _server.GetItems()
+}
+
+func (s *service) NewItem(name string, item *SystrayItem) {
+}
+
+func (s *service) ItemRemoved(name string) {}
+
+func (s *service) ItemUpdated(name string) {}

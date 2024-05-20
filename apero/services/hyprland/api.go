@@ -3,7 +3,6 @@ package hyprland
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -68,7 +67,7 @@ func (s *service) start() {
 			}
 
 			for _, data := range msg {
-				log.Printf("%+v\n", data)
+				// log.Printf("%+v\n", data)
 				s.processEvent(data)
 			}
 		}
