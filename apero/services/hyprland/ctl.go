@@ -1,20 +1,20 @@
 package hyprland
 
-func (s *service) syncWorkspaces() {
+func (s *hyprlandService) syncWorkspaces() {
 	writeCmd("j/workspaces", &s.workspaces)
 	s.syncActiveWorkspace()
 }
 
-func (s *service) syncActiveWorkspace() {
+func (s *hyprlandService) syncActiveWorkspace() {
 	writeCmd("j/activeworkspace", &s.activeWorkspace)
 }
 
-func (s *service) syncClients() {
+func (s *hyprlandService) syncClients() {
 	writeCmd("j/clients", &s.clients)
 	s.syncActiveClient()
 }
 
-func (s *service) syncActiveClient() {
+func (s *hyprlandService) syncActiveClient() {
 	writeCmd("j/activewindow", &s.activeClient)
 }
 

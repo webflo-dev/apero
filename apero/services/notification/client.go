@@ -1,9 +1,10 @@
 package notification
 
 import (
-	"errors"
+	gdb "webflo-dev/apero/dbus"
 
 	"github.com/godbus/dbus/v5"
+	// "github.com/godbus/dbus/v5"
 )
 
 const (
@@ -118,88 +119,52 @@ func (n *Notification[T]) WithAction(actionKey string, resident bool, action Act
 	return n
 }
 
-func (n *Notification[T]) Notify() (uint32, error) {
-	conn, err := dbus.ConnectSessionBus()
+func (n *Notification[T]) Notify() (uint32, bool) {
+	bus, err := gdb.ConnectToSessionBus(logger)
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
 
 	var id uint32
-
-	var obj = conn.Object(iface, path)
-	err = obj.Call(methodNotify, 0,
-		n.appName,
+	if ok := bus.Call(iface, path, methodNotify, &id, n.appName,
 		n.replaceId,
 		n.icon,
 		n.summary,
 		n.body,
 		n.actions.getKeys(),
 		make(map[string]any),
-		n.timeout).Store(&id)
-	if err != nil {
-		logger.Println("Cannot notify", err)
-		err = errors.New("Cannot notify")
-		return 0, err
+		n.timeout); !ok {
+		return 0, false
 	}
 
 	n.id = id
 
 	if len(n.actions) != 0 {
-		n.waitForAction(conn, id)
+		return id, bus.WatchSignal(n.waitForAction, dbus.WithMatchObjectPath(path), dbus.WithMatchInterface(iface))
 	}
 
-	return id, nil
+	return id, true
 }
 
-func (n *Notification[T]) Close() (err error) {
-	conn, err := dbus.ConnectSessionBus()
-	if err != nil {
-		return
+func (n *Notification[T]) Close() {
+	if bus, err := gdb.ConnectToSessionBus(logger); err == nil {
+		bus.Call(iface, path, methodClose, 0, n.id)
 	}
-
-	var obj = conn.Object(iface, path)
-	err = obj.Call(methodClose, 0, n.id).Err
-	if err != nil {
-		logger.Println("Cannot close notification", n.id, err)
-		err = errors.New("Cannot close notification")
-		return
-	}
-
-	return
 }
 
-func (n *Notification[T]) waitForAction(conn *dbus.Conn, id uint32) (err error) {
-	if err = conn.AddMatchSignal(
-		dbus.WithMatchObjectPath(path),
-		dbus.WithMatchInterface(iface),
-	); err != nil {
-		logger.Println("Cannot handle actions", err)
-		err = errors.New("Cannot handle actions")
-		if conn != nil {
-			conn.Close()
-		}
-		return
-	}
+func (n *Notification[T]) waitForAction(signal *dbus.Signal) gdb.WatchBehavior {
+	_id := signal.Body[0].(uint32)
+	_key := signal.Body[1].(string)
 
-	go func() {
-		defer conn.Close()
-		c := make(chan *dbus.Signal, 4)
-		conn.Signal(c)
-		for signal := range c {
-			_id := signal.Body[0].(uint32)
-			_key := signal.Body[1].(string)
-
-			if signal.Path == path && signal.Name == signalActionInvoked && _id == id {
-				if handle, ok := n.actions[_key]; ok {
-					handle(n.handle)
-					if n.resident[_key] == false {
-						n.Close()
-					}
-					break
-				}
+	if signal.Path == path && signal.Name == signalActionInvoked && _id == n.id {
+		if handle, ok := n.actions[_key]; ok {
+			handle(n.handle)
+			if n.resident[_key] == false {
+				n.Close()
 			}
+			return gdb.WatchBehaviorStop
 		}
-	}()
+	}
 
-	return
+	return gdb.WatchBehaviorContinue
 }

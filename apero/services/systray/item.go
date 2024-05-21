@@ -2,6 +2,7 @@ package systray
 
 import (
 	"strings"
+	gdb "webflo-dev/apero/dbus"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -196,8 +197,7 @@ func (s *item) updateProps(values map[string]any) {
 }
 
 type SystrayItem struct {
-	conn   *dbus.Conn
-	obj    dbus.BusObject
+	bus    *gdb.Bus
 	sender string
 	path   dbus.ObjectPath
 	item   *item
@@ -209,70 +209,58 @@ func newSysTrayItem(sender string, path string) *SystrayItem {
 		correctPath = "/StatusNotifierItem"
 	}
 
-	return &SystrayItem{
+	s := &SystrayItem{
 		sender: sender,
 		path:   dbus.ObjectPath(correctPath),
 	}
-}
 
-func (s *SystrayItem) Register(observer ItemObserver) (err error) {
-	s.conn, err = dbus.ConnectSessionBus()
+	s.bus, _ = gdb.ConnectToSessionBus(logger)
 
 	s.updateProps()
-	// log.Printf("GetAll (item) >> %+v\n", item)
 
-	go func() {
-		defer s.conn.Close()
+	s.bus.WatchSignal(s.signal,
+		dbus.WithMatchObjectPath(s.path),
+		dbus.WithMatchSender(s.sender),
+		dbus.WithMatchInterface("org.kde.StatusNotifierItem"),
+	)
 
-		s.conn.AddMatchSignal(
-			dbus.WithMatchObjectPath(s.path),
-			dbus.WithMatchSender(s.sender),
-			dbus.WithMatchInterface("org.kde.StatusNotifierItem"),
-		)
-		c := make(chan *dbus.Signal, 10)
-		s.conn.Signal(c)
-		for v := range c {
-			switch v.Name {
-			case signalItemNewAttentionIcon:
-			case signalItemNewIcon:
-			case signalItemNewOverlayIcon:
-			case signalItemNewStatus:
-			case signalItemNewTitle:
-			case signalItemNewToolTip:
-				s.updateProps()
-
-				go func() {
-					observer.ItemUpdated(s.sender)
-				}()
-				break
-			default:
-				logger.Printf("unhandled signal: name(%s) path(%s) sender(%s) body(%+v)\n", v.Name, v.Path, v.Sender, v.Body)
-				break
-			}
-		}
-	}()
-
-	return
+	return s
 }
 
-func (s *SystrayItem) Unregister() error {
-	if s.conn == nil || s.conn.Connected() == false {
-		return nil
+func (s *SystrayItem) signal(v *dbus.Signal) gdb.WatchBehavior {
+	switch v.Name {
+	case
+		signalItemNewAttentionIcon,
+		signalItemNewIcon,
+		signalItemNewOverlayIcon,
+		signalItemNewStatus,
+		signalItemNewTitle,
+		signalItemNewToolTip:
+
+		s.updateProps()
+
+		// go func() {
+		// 	observer.ItemUpdated(s.sender)
+		// }()
+
+	default:
+		logger.Printf("unhandled signal: name(%s) path(%s) sender(%s) body(%+v)\n", v.Name, v.Path, v.Sender, v.Body)
 	}
 
-	s.conn.Close()
+	return gdb.WatchBehaviorContinue
+}
 
-	return nil
+func (s *SystrayItem) unregister() {
+	s.bus.Close()
 }
 
 func (s *SystrayItem) updateProps() {
-	s.obj = s.conn.Object(s.sender, s.path)
+	var values map[string]any
+	if s.bus.Call(s.sender, s.path, "org.freedesktop.DBus.Properties.GetAll", &values, itemIface) {
 
-	var response map[string]any
-	s.obj.Call("org.freedesktop.DBus.Properties.GetAll", 0).Store(&response)
-
-	s.item = &item{}
-	s.item.updateProps(response)
+		s.item = &item{}
+		s.item.updateProps(values)
+	}
 }
 
 func (s *SystrayItem) GetAttentionIconName() string {

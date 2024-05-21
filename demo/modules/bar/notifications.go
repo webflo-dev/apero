@@ -18,7 +18,7 @@ import (
 )
 
 type notificationIndicatorHandler struct {
-	notifications.Subscriber
+	// notifications.Subscriber
 	box  *gtk.Box
 	icon *gtk.Image
 }
@@ -55,11 +55,11 @@ func newNotificationModule() *gtk.Box {
 
 	handler.update(notifications.DoNotDisturb(), notifications.HasNotifications())
 
-	notifications.Register(handler,
-		notifications.EventNewNotification,
-		notifications.EventNotificationClosed,
-		notifications.EventDoNotDisturbChanged,
-		notifications.EventNotificationsChanged)
+	// notifications.Register(handler,
+	// 	notifications.EventNewNotification,
+	// 	notifications.EventNotificationClosed,
+	// 	notifications.EventDoNotDisturbChanged,
+	// 	notifications.EventNotificationsChanged)
 
 	button.Connect("button-press-event", func(_ *gtk.Button, ev *gdk.Event) bool {
 		btn := gdk.EventButtonNewFromEvent(ev)

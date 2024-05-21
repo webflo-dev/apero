@@ -1,77 +1,17 @@
 package hyprland
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
 
-type service struct {
-	started     bool
-	subscribers map[EventType][]Subscriber
-
-	workspaces      []Workspace
-	activeWorkspace Workspace
-	clients         []Client
-	activeClient    Client
-	// monitors        []Monitor
-	// activeMonitor   Monitor
-}
-
 var _service = newService()
 
-func newService() *service {
-	service := &service{
-		started:     false,
-		subscribers: make(map[EventType][]Subscriber),
-	}
-
-	service.syncWorkspaces()
-	service.syncClients()
-	// service.syncMonitors()
-
-	return service
-}
-
 func StartService() {
-	Layers()
+	_service.syncWorkspaces()
+	_service.syncClients()
+
 	_service.start()
-}
-
-func (s *service) stop() {
-	s.started = false
-}
-
-func (s *service) start() {
-	if s.started {
-		return
-	}
-
-	s.started = true
-
-	go func() {
-		connection := createEventsConnection()
-		defer closeConnection(connection)
-
-		logger.Println("listening for hyprland events")
-
-		for {
-			if s.started == false {
-				return
-			}
-
-			msg, err := readEvent(connection)
-			if err != nil {
-				logger.Println("Error receiving message", err)
-				return
-			}
-
-			for _, data := range msg {
-				// log.Printf("%+v\n", data)
-				s.processEvent(data)
-			}
-		}
-	}()
 }
 
 func Register[T Subscriber](handle T, events ...EventType) {
@@ -181,11 +121,4 @@ func Layouts() ([]string, error) {
 	var layouts []string
 	err := writeCmd("j/layouts", &layouts)
 	return layouts, err
-}
-
-func toStruct[T any](source interface{}) T {
-	var target T
-	rawBytes, _ := json.Marshal(source)
-	json.Unmarshal(rawBytes, &target)
-	return target
 }
