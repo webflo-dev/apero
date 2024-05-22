@@ -34,7 +34,9 @@ func (s *Service) Start(deferer Deferer, loop Looper) bool {
 	s.started = true
 
 	go func() {
-		defer deferer()
+		if deferer != nil {
+			defer deferer()
+		}
 
 		for {
 			if s.started == false {

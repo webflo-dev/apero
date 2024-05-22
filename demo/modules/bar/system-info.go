@@ -17,7 +17,6 @@ type systemInfo struct {
 }
 
 type statsHandler struct {
-	systemStats.Subscriber
 	cpu    *systemInfo
 	memory *systemInfo
 	nvidia *systemInfo
@@ -37,16 +36,16 @@ func newSystemInfoModule() *gtk.Box {
 	nvidia := newSystemInfoBox(Icon_SystemStats_Gpu)
 	box.Add(nvidia.box)
 
-	systemStats.Register(&statsHandler{
-		cpu:    cpu,
-		memory: memory,
-		nvidia: nvidia,
-	}, systemStats.EventAll)
+	systemStats.OnStats("bar-system-info", func(stats systemStats.SystemStats) {
+		cpu.SetValue(stats.Cpu.Usage)
+		memory.SetValue(int(math.Floor((float64(stats.Memory.Used) / float64(stats.Memory.Total)) * 100)))
+		nvidia.SetValue(stats.Nvidia.GpuUsage)
+	})
 
 	return box
 }
 
-func (h *statsHandler) UpdateAll(stats *systemStats.SystemStats) {
+func (h *statsHandler) updateAll(stats systemStats.SystemStats) {
 	h.cpu.SetValue(stats.Cpu.Usage)
 	h.memory.SetValue(int(math.Floor((float64(stats.Memory.Used) / float64(stats.Memory.Total)) * 100)))
 	h.nvidia.SetValue(stats.Nvidia.GpuUsage)

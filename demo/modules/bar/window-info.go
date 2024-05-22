@@ -9,7 +9,7 @@ import (
 )
 
 type windowStateHandler struct {
-	hyprland.Subscriber
+	// hyprland.Subscriber
 	box        *gtk.Box
 	pinned     *gtk.Button
 	fullscreen *gtk.Button
@@ -28,17 +28,20 @@ func newWindowInfoModule() *gtk.Box {
 	box.Add(floating)
 	box.Add(pinned)
 
-	handler := &windowStateHandler{
-		box:        box,
-		pinned:     pinned,
-		fullscreen: fullscreen,
-		floating:   floating,
-	}
-	hyprland.Register(handler,
-		hyprland.EventActiveWindowv2,
-		hyprland.EventFullscreen,
-		hyprland.EventChangeFloatingMode,
-		hyprland.EventPin)
+	/*
+		handler := &windowStateHandler{
+			box:        box,
+			pinned:     pinned,
+			fullscreen: fullscreen,
+			floating:   floating,
+		}
+
+		hyprland.Register(handler,
+			hyprland.EventActiveWindowV2,
+			hyprland.EventFullscreen,
+			hyprland.EventChangeFloatingMode,
+			hyprland.EventPin)
+	*/
 
 	return box
 }

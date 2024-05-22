@@ -62,13 +62,11 @@ func callMethod(handler interface{}, target interface{}, rawValues []string) {
 		switch t.Kind() {
 		case reflect.Bool:
 			in[i] = reflect.ValueOf(value == "1")
-			break
 		case reflect.Int:
 			intValue, _ := strconv.Atoi(value)
 			in[i] = reflect.ValueOf(intValue)
 		default:
 			in[i] = reflect.ValueOf(value)
-			break
 		}
 	}
 

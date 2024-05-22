@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+type EventMessage struct {
+	Type Event
+	Data string
+}
+
 const (
 	bufferSize     = 8192
 	eventSeperator = ">>"
@@ -31,7 +36,7 @@ func closeConnection(connection net.Conn) {
 	}
 }
 
-func readEvent(connection net.Conn) ([]EventData, error) {
+func readEvent(connection net.Conn) ([]EventMessage, error) {
 
 	buf := make([]byte, bufferSize)
 	n, err := connection.Read(buf)
@@ -41,7 +46,7 @@ func readEvent(connection net.Conn) ([]EventData, error) {
 
 	buf = buf[:n]
 	rawEvents := strings.Split(string(buf), "\n")
-	var eventData []EventData
+	var msgs []EventMessage
 	for _, event := range rawEvents {
 		if event == "" {
 			continue
@@ -52,13 +57,13 @@ func readEvent(connection net.Conn) ([]EventData, error) {
 			continue
 		}
 
-		eventData = append(eventData, EventData{
-			Type: EventType(split[0]),
+		msgs = append(msgs, EventMessage{
+			Type: Event(split[0]),
 			Data: split[1],
 		})
 	}
 
-	return eventData, nil
+	return msgs, nil
 }
 
 func writeCmd(command string, target any) error {

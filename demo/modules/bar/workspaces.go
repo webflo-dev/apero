@@ -11,7 +11,7 @@ import (
 )
 
 type workspacesHandler struct {
-	hyprland.Subscriber
+	// hyprland.Subscriber
 	workspaces map[int]*gtk.Button
 }
 
@@ -36,7 +36,10 @@ func newWorkspacesModule() *gtk.Box {
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
 
-	hyprland.Register(handler, hyprland.EventWorkspacev2, hyprland.EventUrgent)
+	hyprland.OnWorkspacev2("bar-workspace", func(payload hyprland.PayloadWorkspaceV2) {
+		handler.WorkspaceV2(payload.WorkspaceId, payload.WorkspaceName)
+	})
+	// hyprland.Register(handler, hyprland.EventWorkspaceV2, hyprland.EventUrgent)
 
 	return box
 }
