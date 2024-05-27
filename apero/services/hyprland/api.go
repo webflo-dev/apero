@@ -3,6 +3,7 @@ package hyprland
 import (
 	"fmt"
 	"strings"
+	"webflo-dev/apero/events"
 )
 
 var _service = newService()
@@ -18,107 +19,107 @@ func StartService() {
 // Event registration
 //
 
-func OnWorkspace(id string, f func(payload PayloadWorkspace)) {
-	registerEvt(EventWorkspace, id, f)
+func OnWorkspace(f func(payload PayloadWorkspace)) (events.ID, error) {
+	return registerEvt(EventWorkspace, f)
 }
-func OnWorkspacev2(id string, f func(payload PayloadWorkspaceV2)) {
-	registerEvt(EventWorkspaceV2, id, f)
+func OnWorkspacev2(f func(payload PayloadWorkspaceV2)) (events.ID, error) {
+	return registerEvt(EventWorkspaceV2, f)
 }
-func OnFocusedMonitor(id string, f func(payload PayloadFocusedMonitor)) {
-	registerEvt(EventFocusedMonitor, id, f)
+func OnFocusedMonitor(f func(payload PayloadFocusedMonitor)) (events.ID, error) {
+	return registerEvt(EventFocusedMonitor, f)
 }
-func OnActiveWindow(id string, f func(payload PayloadActiveWindow)) {
-	registerEvt(EventActiveWindow, id, f)
+func OnActiveWindow(f func(payload PayloadActiveWindow)) (events.ID, error) {
+	return registerEvt(EventActiveWindow, f)
 }
-func OnActiveWindowv2(id string, f func(payload PayloadActiveWindowV2)) {
-	registerEvt(EventActiveWindowV2, id, f)
+func OnActiveWindowv2(f func(payload PayloadActiveWindowV2)) (events.ID, error) {
+	return registerEvt(EventActiveWindowV2, f)
 }
-func OnFullscreen(id string, f func(payload PayloadFullscreen)) {
-	registerEvt(EventFullscreen, id, f)
+func OnFullscreen(f func(payload PayloadFullscreen)) (events.ID, error) {
+	return registerEvt(EventFullscreen, f)
 }
-func OnMonitorRemoved(id string, f func(payload PayloadMonitorRemoved)) {
-	registerEvt(EventMonitorRemoved, id, f)
+func OnMonitorRemoved(f func(payload PayloadMonitorRemoved)) (events.ID, error) {
+	return registerEvt(EventMonitorRemoved, f)
 }
-func OnMonitorAdded(id string, f func(payload PayloadMonitorAdded)) {
-	registerEvt(EventMonitorAdded, id, f)
+func OnMonitorAdded(f func(payload PayloadMonitorAdded)) (events.ID, error) {
+	return registerEvt(EventMonitorAdded, f)
 }
-func OnMonitorAddedv2(id string, f func(payload PayloadMonitorAddedV2)) {
-	registerEvt(EventMonitorAddedV2, id, f)
+func OnMonitorAddedv2(f func(payload PayloadMonitorAddedV2)) (events.ID, error) {
+	return registerEvt(EventMonitorAddedV2, f)
 }
-func OnCreateWorkspace(id string, f func(payload PayloadCreateWorkspace)) {
-	registerEvt(EventCreateWorkspace, id, f)
+func OnCreateWorkspace(f func(payload PayloadCreateWorkspace)) (events.ID, error) {
+	return registerEvt(EventCreateWorkspace, f)
 }
-func OnCreateWorkspacev2(id string, f func(payload PayloadCreateWorkspaceV2)) {
-	registerEvt(EventCreateWorkspaceV2, id, f)
+func OnCreateWorkspacev2(f func(payload PayloadCreateWorkspaceV2)) (events.ID, error) {
+	return registerEvt(EventCreateWorkspaceV2, f)
 }
-func OnDestroyWorkspace(id string, f func(payload PayloadDestroyWorkspace)) {
-	registerEvt(EventDestroyWorkspace, id, f)
+func OnDestroyWorkspace(f func(payload PayloadDestroyWorkspace)) (events.ID, error) {
+	return registerEvt(EventDestroyWorkspace, f)
 }
-func OnDestroyWorkspacev2(id string, f func(payload PayloadDestroyWorkspaceV2)) {
-	registerEvt(EventDestroyWorkspaceV2, id, f)
+func OnDestroyWorkspacev2(f func(payload PayloadDestroyWorkspaceV2)) (events.ID, error) {
+	return registerEvt(EventDestroyWorkspaceV2, f)
 }
-func OnMoveWorkspace(id string, f func(payload PayloadMoveWorkspace)) {
-	registerEvt(EventMoveWorkspace, id, f)
+func OnMoveWorkspace(f func(payload PayloadMoveWorkspace)) (events.ID, error) {
+	return registerEvt(EventMoveWorkspace, f)
 }
-func OnMoveWorkspacev2(id string, f func(payload PayloadMoveWorkspaceV2)) {
-	registerEvt(EventMoveWorkspaceV2, id, f)
+func OnMoveWorkspacev2(f func(payload PayloadMoveWorkspaceV2)) (events.ID, error) {
+	return registerEvt(EventMoveWorkspaceV2, f)
 }
-func OnRenameWorkspace(id string, f func(payload PayloadRenameWorkspace)) {
-	registerEvt(EventRenameWorkspace, id, f)
+func OnRenameWorkspace(f func(payload PayloadRenameWorkspace)) (events.ID, error) {
+	return registerEvt(EventRenameWorkspace, f)
 }
-func OnActiveSpecial(id string, f func(payload PayloadActiveSpecial)) {
-	registerEvt(EventActiveSpecial, id, f)
+func OnActiveSpecial(f func(payload PayloadActiveSpecial)) (events.ID, error) {
+	return registerEvt(EventActiveSpecial, f)
 }
-func OnActiveLayout(id string, f func(payload PayloadActiveLayout)) {
-	registerEvt(EventActiveLayout, id, f)
+func OnActiveLayout(f func(payload PayloadActiveLayout)) (events.ID, error) {
+	return registerEvt(EventActiveLayout, f)
 }
-func OnOpenWindow(id string, f func(payload PayloadOpenWindow)) {
-	registerEvt(EventOpenWindow, id, f)
+func OnOpenWindow(f func(payload PayloadOpenWindow)) (events.ID, error) {
+	return registerEvt(EventOpenWindow, f)
 }
-func OnCloseWindow(id string, f func(payload PayloadCloseWindow)) {
-	registerEvt(EventCloseWindow, id, f)
+func OnCloseWindow(f func(payload PayloadCloseWindow)) (events.ID, error) {
+	return registerEvt(EventCloseWindow, f)
 }
-func OnMoveWindow(id string, f func(payload PayloadMoveWindow)) {
-	registerEvt(EventMoveWindow, id, f)
+func OnMoveWindow(f func(payload PayloadMoveWindow)) (events.ID, error) {
+	return registerEvt(EventMoveWindow, f)
 }
-func OnMoveWindowv2(id string, f func(payload PayloadMoveWindowV2)) {
-	registerEvt(EventMoveWindowV2, id, f)
+func OnMoveWindowv2(f func(payload PayloadMoveWindowV2)) (events.ID, error) {
+	return registerEvt(EventMoveWindowV2, f)
 }
-func OnOpenLayer(id string, f func(payload PayloadOpenLayer)) {
-	registerEvt(EventOpenLayer, id, f)
+func OnOpenLayer(f func(payload PayloadOpenLayer)) (events.ID, error) {
+	return registerEvt(EventOpenLayer, f)
 }
-func OnCloseLayer(id string, f func(payload PayloadCloseLayer)) {
-	registerEvt(EventCloseLayer, id, f)
+func OnCloseLayer(f func(payload PayloadCloseLayer)) (events.ID, error) {
+	return registerEvt(EventCloseLayer, f)
 }
-func OnSubMap(id string, f func(payload PayloadSubMap)) {
-	registerEvt(EventSubMap, id, f)
+func OnSubMap(f func(payload PayloadSubMap)) (events.ID, error) {
+	return registerEvt(EventSubMap, f)
 }
-func OnChangeFloatingMode(id string, f func(payload PayloadChangeFloatingMode)) {
-	registerEvt(EventChangeFloatingMode, id, f)
+func OnChangeFloatingMode(f func(payload PayloadChangeFloatingMode)) (events.ID, error) {
+	return registerEvt(EventChangeFloatingMode, f)
 }
-func OnUrgent(id string, f func(payload PayloadUrgent)) {
-	registerEvt(EventUrgent, id, f)
+func OnUrgent(f func(payload PayloadUrgent)) (events.ID, error) {
+	return registerEvt(EventUrgent, f)
 }
-func OnMinimize(id string, f func(payload PayloadMinimize)) {
-	registerEvt(EventMinimize, id, f)
+func OnMinimize(f func(payload PayloadMinimize)) (events.ID, error) {
+	return registerEvt(EventMinimize, f)
 }
-func OnScreencast(id string, f func(payload PayloadScreencast)) {
-	registerEvt(EventScreencast, id, f)
+func OnScreencast(f func(payload PayloadScreencast)) (events.ID, error) {
+	return registerEvt(EventScreencast, f)
 }
-func OnWindowTitle(id string, f func(payload PayloadWindowTitle)) {
-	registerEvt(EventWindowTitle, id, f)
+func OnWindowTitle(f func(payload PayloadWindowTitle)) (events.ID, error) {
+	return registerEvt(EventWindowTitle, f)
 }
-func OnIgnoreGroupLock(id string, f func(payload PayloadIgnoreGroupLock)) {
-	registerEvt(EventIgnoreGroupLock, id, f)
+func OnIgnoreGroupLock(f func(payload PayloadIgnoreGroupLock)) (events.ID, error) {
+	return registerEvt(EventIgnoreGroupLock, f)
 }
-func OnLockGroups(id string, f func(payload PayloadLockGroups)) {
-	registerEvt(EventLockGroups, id, f)
+func OnLockGroups(f func(payload PayloadLockGroups)) (events.ID, error) {
+	return registerEvt(EventLockGroups, f)
 }
-func OnConfigReloaded(id string, f func()) {
-	registerEvt(EventConfigReloaded, id, func(_ any) { f() })
+func OnConfigReloaded(f func()) (events.ID, error) {
+	return registerEvt(EventConfigReloaded, func(_ any) { f() })
 }
-func OnPin(id string, f func(payload PayloadPin)) {
-	registerEvt(EventPin, id, f)
+func OnPin(f func(payload PayloadPin)) (events.ID, error) {
+	return registerEvt(EventPin, f)
 }
 
 //

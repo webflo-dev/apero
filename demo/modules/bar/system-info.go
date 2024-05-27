@@ -36,7 +36,7 @@ func newSystemInfoModule() *gtk.Box {
 	nvidia := newSystemInfoBox(Icon_SystemStats_Gpu)
 	box.Add(nvidia.box)
 
-	systemStats.OnStats("bar-system-info", func(stats systemStats.SystemStats) {
+	systemStats.OnStats(func(stats systemStats.SystemStats) {
 		cpu.SetValue(stats.Cpu.Usage)
 		memory.SetValue(int(math.Floor((float64(stats.Memory.Used) / float64(stats.Memory.Total)) * 100)))
 		nvidia.SetValue(stats.Nvidia.GpuUsage)

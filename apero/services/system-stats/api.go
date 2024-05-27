@@ -16,15 +16,15 @@ func StartService() {
 	_service.start()
 }
 
-func OnStats(id string, f func(stats SystemStats)) {
-	_service.eventAll.RegisterHandler(id, events.HandlerFunc[SystemStats](f))
+func OnStats(f func(stats SystemStats)) (events.ID, error) {
+	return _service.eventAll.RegisterHandler(events.HandlerFunc[SystemStats](f))
 }
-func OnCpuStats(id string, f func(stats CpuStats)) {
-	_service.eventCpu.RegisterHandler(id, events.HandlerFunc[CpuStats](f))
+func OnCpuStats(f func(stats CpuStats)) (events.ID, error) {
+	return _service.eventCpu.RegisterHandler(events.HandlerFunc[CpuStats](f))
 }
-func OnMemoryStats(id string, f func(stats MemoryStats)) {
-	_service.eventMemory.RegisterHandler(id, events.HandlerFunc[MemoryStats](f))
+func OnMemoryStats(f func(stats MemoryStats)) (events.ID, error) {
+	return _service.eventMemory.RegisterHandler(events.HandlerFunc[MemoryStats](f))
 }
-func OnNvidiaStats(id string, f func(stats NvidiaStats)) {
-	_service.eventNvidia.RegisterHandler(id, events.HandlerFunc[NvidiaStats](f))
+func OnNvidiaStats(f func(stats NvidiaStats)) (events.ID, error) {
+	return _service.eventNvidia.RegisterHandler(events.HandlerFunc[NvidiaStats](f))
 }

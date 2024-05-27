@@ -8,14 +8,14 @@ func StartService() {
 	_service.server.start()
 }
 
-func OnNewNotification(id string, f func(payload Notification)) {
-	_service.evtNewNotification.RegisterHandler(id, events.HandlerFunc[Notification](f))
+func OnNewNotification(f func(payload Notification)) (events.ID, error) {
+	return _service.evtNewNotification.RegisterHandler(events.HandlerFunc[Notification](f))
 }
-func OnNotificationClosed(id string, f func(payload PayloadNotificationClosed)) {
-	_service.evtNotificationClosed.RegisterHandler(id, events.HandlerFunc[PayloadNotificationClosed](f))
+func OnNotificationClosed(id string, f func(payload PayloadNotificationClosed)) (events.ID, error) {
+	return _service.evtNotificationClosed.RegisterHandler(events.HandlerFunc[PayloadNotificationClosed](f))
 }
-func OnNotificationsChanged(id string, f func(payload PayloadEmpty)) {
-	_service.evtNotificationsChanged.RegisterHandler(id, events.HandlerFunc[PayloadEmpty](f))
+func OnNotificationsChanged(id string, f func(payload PayloadEmpty)) (events.ID, error) {
+	return _service.evtNotificationsChanged.RegisterHandler(events.HandlerFunc[PayloadEmpty](f))
 }
 
 func SetDoNotDisturb(enabled bool) {

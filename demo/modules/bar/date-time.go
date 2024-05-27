@@ -4,14 +4,14 @@ import (
 	"time"
 	"webflo-dev/apero/ui"
 
+	"github.com/goodsign/monday"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
 func newDateTimeModule() *gtk.Box {
 
-	// dateLabel, _ := gtk.LabelNew(glib.NewDateTimeNowLocal().Format("%A %d %B"))
-	dateLabel, _ := gtk.LabelNew(time.Now().Format("Monday 02 January"))
+	dateLabel, _ := gtk.LabelNew(monday.Format(time.Now(), "Monday 02 January", monday.LocaleFrFR))
 	timeLabel, _ := gtk.LabelNew(time.Now().Format("15:04"))
 
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 16)

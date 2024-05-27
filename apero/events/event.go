@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
@@ -12,7 +11,7 @@ import (
 
 type ID uint32
 
-var __id ID = 0
+var __storeIds ID = 0
 
 func newStore[Payload any]() *memoryStore[Payload] {
 	return &memoryStore[Payload]{
@@ -57,8 +56,8 @@ func (m *memoryStore[Payload]) SubscribeWithContext(ctx context.Context, f func(
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	__id++
-	x := __id
+	__storeIds++
+	x := __storeIds
 	m.callbacks[x] = f
 
 	// close and cleanup the channel
@@ -89,8 +88,8 @@ func (e HandlerFunc[Payload]) Handle(payload Payload) {
 }
 
 type Event[Payload any] interface {
-	RegisterHandler(id string, f Handler[Payload]) error
-	UnregisterHandler(id string)
+	RegisterHandler(f Handler[Payload]) (ID, error)
+	UnregisterHandler(id ID)
 	Publish(payload Payload) error
 	PublishWithContext(ctx context.Context, payload Payload) error
 }
@@ -98,8 +97,6 @@ type Event[Payload any] interface {
 //
 // Event system
 //
-
-var ErrDuplicateID = errors.New("Duplicate handler ID")
 
 type Store[Payload any] interface {
 	Publish(payload Payload) error
@@ -125,9 +122,11 @@ func NewEvent[Payload any](ctx context.Context, store Store[Payload]) Event[Payl
 
 type event[Payload any] struct {
 	store    Store[Payload]
-	handlers map[string]Handler[Payload]
+	handlers map[ID]Handler[Payload]
 	mu       sync.RWMutex
 }
+
+var __ids ID = 0
 
 func (e *event[Payload]) subscribe(payload Payload) {
 	for _, handler := range e.handlers {
@@ -136,25 +135,22 @@ func (e *event[Payload]) subscribe(payload Payload) {
 }
 
 // Register registers an event handler
-func (e *event[Payload]) RegisterHandler(id string, f Handler[Payload]) error {
+func (e *event[Payload]) RegisterHandler(f Handler[Payload]) (ID, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
 	if e.handlers == nil {
-		e.handlers = map[string]Handler[Payload]{}
+		e.handlers = map[ID]Handler[Payload]{}
 	}
 
-	if _, ok := e.handlers[id]; ok {
-		return ErrDuplicateID
-	}
+	__ids++
+	e.handlers[__ids] = f
 
-	e.handlers[id] = f
-
-	return nil
+	return __ids, nil
 }
 
 // Register registers an event handler
-func (c *event[Payload]) UnregisterHandler(id string) {
+func (c *event[Payload]) UnregisterHandler(id ID) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

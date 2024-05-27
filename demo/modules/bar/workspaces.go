@@ -36,7 +36,7 @@ func newWorkspacesModule() *gtk.Box {
 
 	handler.WorkspaceV2(hyprland.ActiveWorkspace().Id, hyprland.ActiveWorkspace().Name)
 
-	hyprland.OnWorkspacev2("bar-workspace", func(payload hyprland.PayloadWorkspaceV2) {
+	hyprland.OnWorkspacev2(func(payload hyprland.PayloadWorkspaceV2) {
 		handler.WorkspaceV2(payload.WorkspaceId, payload.WorkspaceName)
 	})
 	// hyprland.Register(handler, hyprland.EventWorkspaceV2, hyprland.EventUrgent)

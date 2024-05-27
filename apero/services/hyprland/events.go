@@ -1,6 +1,7 @@
 package hyprland
 
 import (
+	"errors"
 	"webflo-dev/apero/events"
 )
 
@@ -107,10 +108,12 @@ func newEvt[P any]() *HyprlandEvt[P] {
 	}
 }
 
-func registerEvt[P any](event Event, id string, handler func(P)) {
+func registerEvt[P any](event Event, handler func(P)) (events.ID, error) {
 	if e, ok := evts[event].(*HyprlandEvt[P]); ok {
-		e.RegisterHandler(id, events.HandlerFunc[P](handler))
+		return e.RegisterHandler(events.HandlerFunc[P](handler))
 	}
+
+	return 0, errors.New("invalid event type")
 }
 
 func publishEvt(event Event, values MsgValues) {
