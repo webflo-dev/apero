@@ -10,7 +10,7 @@ import (
 	"github.com/godbus/dbus/v5/introspect"
 )
 
-type closeReason uint32
+type CloseReason uint32
 
 const (
 	path                     = "/org/freedesktop/Notifications"
@@ -18,10 +18,10 @@ const (
 	signalActionInvoked      = iface + ".ActionInvoked"
 	signalNotificationClosed = iface + ".NotificationClosed"
 
-	closeReasonExpired   closeReason = 1
-	closeReasonDismissed closeReason = 2
-	closeReasonClosed    closeReason = 3
-	closeReasonUnknown   closeReason = 4
+	CloseReasonExpired   CloseReason = 1
+	CloseReasonDismissed CloseReason = 2
+	CloseReasonClosed    CloseReason = 3
+	CloseReasonUnknown   CloseReason = 4
 
 	defaultTimeout = 5000
 )
@@ -46,6 +46,12 @@ const (
 	ServerInfoSpecVersion = "1.2"
 )
 
+type Observer interface {
+	NewNotification(Notification)
+	NotificationClosed(uint32, uint32)
+	NotificationsChanged()
+}
+
 type NotificationList map[uint32]Notification
 
 type server struct {
@@ -55,17 +61,20 @@ type server struct {
 	counter       uint32
 	notifications NotificationList
 	ongoing       map[uint32]chan uint32
+
+	observer Observer
 }
 
 type spec struct {
 	server *server
 }
 
-func newServer() *server {
+func newServer(observer Observer) *server {
 	return &server{
 		base:          services.NewService(),
 		notifications: make(NotificationList),
 		ongoing:       make(map[uint32]chan uint32),
+		observer:      observer,
 	}
 }
 
@@ -129,10 +138,10 @@ func (s *spec) Notify(
 
 	// logger.Printf("Notification > %+v\n", n)
 
-	// go func() {
-	// 	s.observer.NewNotification(n)
-	// 	s.observer.NotificationsChanged(!s.HasNotifications())
-	// }()
+	go func() {
+		s.server.observer.NewNotification(n)
+		s.server.observer.NotificationsChanged()
+	}()
 
 	if expireTimeout == -1 {
 		expireTimeout = defaultTimeout
@@ -141,7 +150,7 @@ func (s *spec) Notify(
 	if expireTimeout > 0 {
 		flag := make(chan uint32, 1)
 		s.server.ongoing[n.id] = flag
-		go s.server.waitForClose(int32(expireTimeout), n.id, uint32(closeReasonExpired), flag)
+		go s.server.waitForClose(int32(expireTimeout), n.id, uint32(CloseReasonExpired), flag)
 	}
 
 	return n.id
@@ -171,7 +180,7 @@ func (s *server) waitForClose(timeout int32, id uint32, reason uint32, flag chan
 
 	select {
 	case <-timer.C:
-		s.removeNotification(id, uint32(closeReasonExpired))
+		s.removeNotification(id, uint32(CloseReasonExpired))
 	case reason = <-flag:
 		s.removeNotification(id, uint32(reason))
 	}
@@ -179,7 +188,7 @@ func (s *server) waitForClose(timeout int32, id uint32, reason uint32, flag chan
 }
 
 func (s *server) closeNotification(id uint32) {
-	reason := uint32(closeReasonClosed)
+	reason := uint32(CloseReasonClosed)
 
 	if n, found := s.ongoing[id]; found {
 		n <- reason
@@ -190,7 +199,6 @@ func (s *server) closeNotification(id uint32) {
 
 func (s *server) removeNotification(id uint32, reason uint32) (err error) {
 	_, exists := s.notifications[id]
-	isEmptyPrev := len(s.notifications) == 0
 
 	delete(s.notifications, id)
 
@@ -201,14 +209,9 @@ func (s *server) removeNotification(id uint32, reason uint32) (err error) {
 
 	s.bus.EmitSignal(path, signalNotificationClosed, id, reason)
 
-	isEmptyNow := len(s.notifications) == 0
-
 	if exists {
-		// go func() { s.observer.NotificationClosed(id, reason) }()
-	}
-
-	if isEmptyPrev != isEmptyNow {
-		// go func() { s.observer.NotificationsChanged(!isEmptyNow) }()
+		s.observer.NotificationClosed(id, reason)
+		s.observer.NotificationsChanged()
 	}
 
 	return err

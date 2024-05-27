@@ -33,9 +33,6 @@ func (h *notificationActionHandler) doAction1() {
 func (h *notificationActionHandler) doAction2() {
 	log.Printf("do action2 h<%s>\n", h.id)
 }
-func doGenericAction() {
-
-}
 
 func newNotificationModule() *gtk.Box {
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)

@@ -1,28 +1,22 @@
 package notifications
 
+import "webflo-dev/apero/events"
+
 var _service = newService()
 
 func StartService() {
 	_service.server.start()
 }
 
-// func Register[T Subscriber](handle T, events ...EventType) {
-// 	for _, event := range events {
-// 		_service.subscribers[event] = append(_service.subscribers[event], handle)
-// 	}
-// }
-
-// func Unregister(handle Subscriber, events ...EventType) {
-// 	for _, event := range events {
-// 		handlers := _service.subscribers[event]
-// 		for i, h := range handlers {
-// 			if h == handle {
-// 				_service.subscribers[event] = append(handlers[:i], handlers[i+1:]...)
-// 				break
-// 			}
-// 		}
-// 	}
-// }
+func OnNewNotification(id string, f func(payload Notification)) {
+	_service.evtNewNotification.RegisterHandler(id, events.HandlerFunc[Notification](f))
+}
+func OnNotificationClosed(id string, f func(payload PayloadNotificationClosed)) {
+	_service.evtNotificationClosed.RegisterHandler(id, events.HandlerFunc[PayloadNotificationClosed](f))
+}
+func OnNotificationsChanged(id string, f func(payload PayloadEmpty)) {
+	_service.evtNotificationsChanged.RegisterHandler(id, events.HandlerFunc[PayloadEmpty](f))
+}
 
 func SetDoNotDisturb(enabled bool) {
 	if _service.doNotDisturb == enabled {
@@ -31,9 +25,7 @@ func SetDoNotDisturb(enabled bool) {
 
 	_service.doNotDisturb = enabled
 
-	// for _, handler := range _service.subscribers[EventDoNotDisturbChanged] {
-	// 	handler.DoNotDisturbChanged(enabled)
-	// }
+	_service.evtDoNotDisturbChanged.Publish(PayloadDoNotDisturb{DoNotDisturb: enabled})
 }
 
 func DoNotDisturb() bool {
@@ -71,4 +63,5 @@ func InvokeAction(id uint32, key string) bool {
 
 func CloseNotification(id uint32) {
 	_service.server.closeNotification(id)
+	_service.evtNotificationClosed.Publish(PayloadNotificationClosed{Id: id, Reason: CloseReasonClosed})
 }

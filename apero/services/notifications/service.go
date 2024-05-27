@@ -1,58 +1,69 @@
 package notifications
 
-// type EventType string
+import (
+	"webflo-dev/apero/events"
+)
 
-// const (
-// 	EventNewNotification      EventType = "NewNotification"
-// 	EventNotificationClosed   EventType = "NotificationClosed"
-// 	EventDoNotDisturbChanged  EventType = "DoNotDisturbchanged"
-// 	EventNotificationsChanged EventType = "NotificationsChanged"
-// )
+type EventType uint16
 
-// type Subscriber interface {
-// 	NewNotification(notification Notification)
-// 	NotificationClosed(id uint32, reason uint32)
-// 	DoNotDisturbChanged(enabled bool)
-// 	NotificationsChanged(isEmpty bool)
-// }
+const (
+	EventNewNotification EventType = iota
+	EventNotificationClosed
+	EventDoNotDisturbChanged
+)
+
+type PayloadNotificationClosed struct {
+	Id     uint32
+	Reason CloseReason
+}
+
+type PayloadDoNotDisturb struct {
+	DoNotDisturb bool
+}
+
+type PayloadEmpty struct {
+}
 
 type notificationService struct {
 	doNotDisturb bool
-	// subscribers  map[EventType][]Subscriber
-	isClearing bool
+	isClearing   bool
 
 	server *server
+
+	evtNewNotification      events.Event[Notification]
+	evtNotificationClosed   events.Event[PayloadNotificationClosed]
+	evtDoNotDisturbChanged  events.Event[PayloadDoNotDisturb]
+	evtNotificationsChanged events.Event[PayloadEmpty]
 }
 
 func newService() *notificationService {
-	return &notificationService{
+	s := &notificationService{
 		doNotDisturb: false,
-		// subscribers:  make(map[EventType][]Subscriber),
-		isClearing: false,
-		server:     newServer(),
+		isClearing:   false,
+
+		evtNewNotification:      events.New[Notification](),
+		evtNotificationClosed:   events.New[PayloadNotificationClosed](),
+		evtDoNotDisturbChanged:  events.New[PayloadDoNotDisturb](),
+		evtNotificationsChanged: events.New[PayloadEmpty](),
 	}
+
+	observer := &observer{service: s}
+	s.server = newServer(observer)
+
+	return s
 }
 
-func (s *notificationService) newNotification(notification Notification) {
-	// if s.doNotDisturb == false {
-	// 	for _, handler := range s.subscribers[EventNewNotification] {
-	// 		handler.NewNotification(notification)
-	// 	}
-	// }
+type observer struct {
+	service *notificationService
 }
 
-func (s *notificationService) notificationClosed(id uint32, reason uint32) {
-	// if s.doNotDisturb == false && s.isClearing == false {
-	// 	for _, subscriber := range s.subscribers[EventNotificationClosed] {
-	// 		subscriber.NotificationClosed(id, reason)
-	// 	}
-	// }
+func (o *observer) NotificationsChanged() {
+	o.service.evtNotificationsChanged.Publish(PayloadEmpty{})
+}
+func (o *observer) NewNotification(n Notification) {
+	o.service.evtNewNotification.Publish(n)
 }
 
-func (s *notificationService) notificationsChanged(isEmpty bool) {
-	// if s.isClearing == false {
-	// 	for _, subscriber := range s.subscribers[EventNotificationsChanged] {
-	// 		subscriber.NotificationsChanged(isEmpty)
-	// 	}
-	// }
+func (o *observer) NotificationClosed(id uint32, reason uint32) {
+	o.service.evtNotificationClosed.Publish(PayloadNotificationClosed{id, CloseReason(reason)})
 }
